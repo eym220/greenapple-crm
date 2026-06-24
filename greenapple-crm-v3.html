@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>풋사과 포토클럽 · 고객 관리</title>
+<style>
+  :root{--bg:#fafaf9;--bg2:#f2f0ec;--bg3:#ffffff;--border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);--text:#1a1a18;--text2:#5a5a55;--text3:#9a9a95;--green:#1D9E75;--green-bg:#E1F5EE;--green-text:#0F6E56;--red:#dc3545;--purple-bg:#EEEDFE;--purple-text:#534AB7;--pink-bg:#FBEAF0;--pink-text:#993556;--amber-bg:#FAEEDA;--amber-text:#854F0B;--teal-bg:#E1F5EE;--teal-text:#0F6E56;--radius:8px;--radius-lg:12px}
+  @media(prefers-color-scheme:dark){:root{--bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);--text:#e8e8e2;--text2:#a0a09a;--text3:#606058;--green-bg:#0a3328;--green-text:#5DCAA5;--purple-bg:#1e1a3a;--purple-text:#AFA9EC;--pink-bg:#2a1020;--pink-text:#ED93B1;--amber-bg:#2a1e08;--amber-text:#EF9F27;--teal-bg:#0a2820;--teal-text:#5DCAA5}}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+  /* 로그인 화면 */
+  .login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
+  .login-box{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:32px 28px;width:100%;max-width:340px;text-align:center}
+  .login-logo{font-size:32px;margin-bottom:8px}
+  .login-title{font-size:18px;font-weight:600;margin-bottom:4px}
+  .login-sub{font-size:13px;color:var(--text3);margin-bottom:24px}
+  .login-input{width:100%;padding:10px 14px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:15px;font-family:inherit;text-align:center;letter-spacing:4px;margin-bottom:12px}
+  .login-input:focus{outline:none;border-color:var(--green)}
+  .login-btn{width:100%;padding:11px;background:var(--text);color:var(--bg);border:none;border-radius:var(--radius);font-size:14px;cursor:pointer;font-weight:500;font-family:inherit}
+  .login-btn:hover{opacity:.85}
+  .login-error{font-size:12px;color:var(--red);margin-top:8px;min-height:18px}
+  /* 헤더 */
+  .header{background:var(--bg3);border-bottom:0.5px solid var(--border);padding:0 16px;display:flex;align-items:center;gap:10px;height:52px;position:sticky;top:0;z-index:50}
+  .logo{font-size:15px;font-weight:600;letter-spacing:-.02em;white-space:nowrap}
+  .logo span{color:var(--green)}
+  .header-nav{display:flex;gap:2px}
+  .nav-btn{padding:6px 10px;border:none;background:none;font-size:12px;cursor:pointer;color:var(--text2);border-radius:var(--radius);transition:all .15s;font-family:inherit;white-space:nowrap}
+  .nav-btn:hover{background:var(--bg2);color:var(--text)}
+  .nav-btn.active{background:var(--text);color:var(--bg);font-weight:500}
+  .header-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .sync{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px;white-space:nowrap}
+  .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+  .sync-dot.syncing{background:var(--amber-text);animation:pulse 1s infinite}
+  .sync-dot.err{background:var(--red)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .logout-btn{padding:4px 8px;border:0.5px solid var(--border2);border-radius:var(--radius);background:none;font-size:11px;cursor:pointer;color:var(--text3);font-family:inherit}
+  /* 컨테이너 */
+  .container{max-width:680px;margin:0 auto;padding:16px 14px 40px}
+  /* 버튼 */
+  .btn-primary{padding:8px 16px;background:var(--text);color:var(--bg);border:none;border-radius:var(--radius);font-size:13px;cursor:pointer;font-weight:500;font-family:inherit;white-space:nowrap}
+  .btn-primary:hover{opacity:.82}
+  .btn-ghost{padding:7px 12px;background:none;border:0.5px solid var(--border2);border-radius:var(--radius);font-size:13px;cursor:pointer;color:var(--text2);font-family:inherit}
+  .btn-ghost:hover{background:var(--bg2)}
+  .btn-danger{padding:7px 12px;background:none;border:0.5px solid var(--red);border-radius:var(--radius);font-size:13px;cursor:pointer;color:var(--red);font-family:inherit}
+  .btn-excel{padding:7px 12px;background:none;border:0.5px solid #1D9E75;border-radius:var(--radius);font-size:12px;cursor:pointer;color:#1D9E75;font-family:inherit;display:flex;align-items:center;gap:5px}
+  /* 카드 */
+  .card{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:12px}
+  .card-title{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+  /* 폼 */
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+  .form-row.single{grid-template-columns:1fr}
+  @media(max-width:480px){.form-row{grid-template-columns:1fr}}
+  .field label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px}
+  .field input,.field select,.field textarea{width:100%;padding:8px 10px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;font-family:inherit}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--green)}
+  .field textarea{resize:vertical;min-height:64px;line-height:1.5}
+  /* 목록 */
+  .list-header{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+  .search-wrap{position:relative;flex:1;min-width:140px}
+  .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.4;font-size:14px;pointer-events:none}
+  .search-input{width:100%;padding:8px 12px 8px 34px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit}
+  .search-input:focus{outline:none;border-color:var(--green)}
+  .customer-row{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s;margin-bottom:6px}
+  .customer-row:hover{border-color:var(--border2)}
+  .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0}
+  .cinfo{flex:1;min-width:0}
+  .cname{font-size:14px;font-weight:500}
+  .cmeta{font-size:12px;color:var(--text2);margin-top:1px}
+  /* 배지 */
+  .badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;white-space:nowrap}
+  .badge-green{background:var(--green-bg);color:var(--green-text)}
+  .badge-gray{background:var(--bg2);color:var(--text2)}
+  .badge-purple{background:var(--purple-bg);color:var(--purple-text)}
+  .badge-pink{background:var(--pink-bg);color:var(--pink-text)}
+  .badge-amber{background:var(--amber-bg);color:var(--amber-text)}
+  .badge-teal{background:var(--teal-bg);color:var(--teal-text)}
+  /* 동의 토글 */
+  .consent-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0}
+  .consent-row+.consent-row{border-top:0.5px solid var(--border)}
+  .toggle-wrap{position:relative;width:40px;height:22px;flex-shrink:0}
+  .toggle-wrap input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0;z-index:1}
+  .toggle-track{width:40px;height:22px;background:var(--border2);border-radius:11px;transition:background .2s;position:relative}
+  .toggle-wrap input:checked~.toggle-track{background:var(--green)}
+  .toggle-thumb{position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform .2s;pointer-events:none}
+  .toggle-wrap input:checked~.toggle-track .toggle-thumb{transform:translateX(18px)}
+  /* 보정 테이블 */
+  .retouch-table{width:100%;border-collapse:collapse}
+  .retouch-table th{font-size:11px;color:var(--text3);font-weight:500;padding:6px 4px;text-align:center;border-bottom:0.5px solid var(--border)}
+  .retouch-table th:first-child{text-align:left}
+  .retouch-table td{padding:6px 4px;border-bottom:0.5px solid var(--border);font-size:13px;vertical-align:middle}
+  .retouch-table tr:last-child td{border-bottom:none}
+  .retouch-table td:first-child{color:var(--text2);font-size:12px}
+  .level-btn{width:30px;height:26px;border:0.5px solid var(--border2);border-radius:6px;background:none;font-size:12px;cursor:pointer;color:var(--text2);font-family:inherit;transition:all .1s}
+  .level-btn.sel{background:var(--text);color:var(--bg);border-color:var(--text);font-weight:500}
+  .level-btn:hover:not(.sel){background:var(--bg2)}
+  /* 방문이력 */
+  .visit-item{padding:10px 0;border-bottom:0.5px solid var(--border);display:flex;gap:12px}
+  .visit-item:last-child{border-bottom:none}
+  .vdate{font-size:12px;color:var(--text3);min-width:82px;padding-top:2px;flex-shrink:0}
+  .vnote{font-size:12px;color:var(--text2);margin-top:3px}
+  /* 예약 통계 */
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+  @media(max-width:480px){.stat-row{grid-template-columns:repeat(2,1fr)}}
+  .stat-card{background:var(--bg2);border-radius:var(--radius);padding:12px;text-align:center}
+  .stat-num{font-size:20px;font-weight:600}
+  .stat-label{font-size:11px;color:var(--text2);margin-top:2px}
+  .concept-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .filter-chip{padding:5px 12px;border:0.5px solid var(--border2);border-radius:20px;font-size:12px;cursor:pointer;background:var(--bg3);color:var(--text2);transition:all .15s;font-family:inherit}
+  .filter-chip.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+  .booking-card{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:center;cursor:pointer}
+  .booking-card:hover{border-color:var(--border2)}
+  .bdate{min-width:44px;text-align:center;flex-shrink:0}
+  .bday{font-size:20px;font-weight:600;line-height:1}
+  .bmonth{font-size:11px;color:var(--text3);margin-top:2px}
+  .bdiv{width:0.5px;background:var(--border);align-self:stretch;flex-shrink:0}
+  .binfo{flex:1;min-width:0}
+  .bname{font-size:14px;font-weight:500}
+  .bmeta{display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap}
+  /* 뒤로가기 */
+  .back-btn{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);cursor:pointer;margin-bottom:14px;border:none;background:none;padding:0;font-family:inherit}
+  .back-btn:hover{color:var(--text)}
+  .page-title{font-size:17px;font-weight:600;margin-bottom:16px}
+  /* 저장바 */
+  .save-bar{background:var(--bg3);border-top:0.5px solid var(--border);padding:12px 16px;display:flex;gap:8px;margin-top:16px;border-radius:var(--radius-lg)}
+  /* 모달 */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:200;padding:16px}
+  .modal-backdrop.open{display:flex}
+  .modal{background:var(--bg3);border-radius:var(--radius-lg);padding:20px;width:100%;max-width:360px;border:0.5px solid var(--border)}
+  .modal-title{font-size:15px;font-weight:600;margin-bottom:14px}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+  .empty-state{text-align:center;padding:3rem 1rem;color:var(--text3)}
+  .loading{text-align:center;padding:2rem;color:var(--text3);font-size:13px}
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:20px;font-size:13px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🍏</div>
+    <div class="login-title">fx.greenapple CRM</div>
+    <div class="login-sub">비밀번호를 입력해주세요</div>
+    <input class="login-input" type="password" id="pw-input" placeholder="••••" onkeydown="if(event.key==='Enter')checkPw()">
+    <button class="login-btn" onclick="checkPw()">입장</button>
+    <div class="login-error" id="pw-error"></div>
+  </div>
+</div>
+
+<!-- 메인 앱 -->
+<div id="main-app" style="display:none">
+<header class="header">
+  <div class="logo">🍏 <span>fx</span>.greenapple</div>
+  <nav class="header-nav">
+    <button class="nav-btn active" onclick="showTab('list')">고객</button>
+    <button class="nav-btn" onclick="showTab('booking')">예약</button>
+    <button class="nav-btn" onclick="openNew()">+ 등록</button>
+  </nav>
+  <div class="header-right">
+    <div class="sync">
+      <div class="sync-dot syncing" id="sdot"></div>
+      <span id="stxt">연결 중</span>
+    </div>
+    <button class="logout-btn" onclick="logout()">로그아웃</button>
+  </div>
+</header>
+
+<div class="container">
+  <!-- 고객 목록 -->
+  <div id="tab-list">
+    <div class="list-header">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" type="text" placeholder="이름 또는 연락처 검색..." oninput="filterCustomers(this.value)">
+      </div>
+      <button class="btn-excel" onclick="exportExcel()">📥 엑셀 다운</button>
+      <button class="btn-primary" onclick="openNew()">+ 등록</button>
+    </div>
+    <div id="customer-list"><div class="loading">불러오는 중...</div></div>
+  </div>
+
+  <!-- 예약 현황 -->
+  <div id="tab-booking" style="display:none">
+    <div class="stat-row" id="stat-row"></div>
+    <div class="concept-filter" id="concept-filter"></div>
+    <div id="booking-list"></div>
+  </div>
+
+  <!-- 등록/상세 -->
+  <div id="tab-new" style="display:none">
+    <button class="back-btn" onclick="backToList()">← 목록으로</button>
+    <div class="page-title" id="form-title">신규 고객 등록</div>
+
+    <div class="card">
+      <div class="card-title">기본 정보</div>
+      <div class="form-row">
+        <div class="field"><label>이름 *</label><input type="text" id="f-name" placeholder="홍길동"></div>
+        <div class="field"><label>연락처</label><input type="tel" id="f-phone" placeholder="010-0000-0000"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>인스타그램</label><input type="text" id="f-insta" placeholder="@username"></div>
+        <div class="field"><label>의상 사이즈</label>
+          <select id="f-size"><option value="">선택</option><option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
+        </div>
+      </div>
+      <div class="form-row single">
+        <div class="field"><label>메모</label><textarea id="f-memo" placeholder="특이사항, 선호 컨셉 등"></textarea></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">업로드 동의</div>
+      <div class="consent-row">
+        <div><div style="font-size:13px;font-weight:500">SNS 업로드 동의</div><div style="font-size:12px;color:var(--text3)">인스타그램 등 SNS 게시 동의</div></div>
+        <div class="toggle-wrap"><input type="checkbox" id="consent-sns"><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">보정 설정</div>
+      <div style="display:flex;gap:14px;margin-bottom:10px;font-size:11px;color:var(--text3)">
+        <span>0 = 안함</span><span>1 = 조금</span><span>2 = 중간</span><span>3 = 많이</span>
+      </div>
+      <table class="retouch-table">
+        <thead><tr><th style="width:50%">항목</th><th>0</th><th>1</th><th>2</th><th>3</th></tr></thead>
+        <tbody id="retouch-body"></tbody>
+      </table>
+      <div style="margin-top:12px">
+        <div class="field"><label>기타 컴플렉스 (서술형)</label><textarea id="f-complex" placeholder="고객이 신경 써달라고 한 부분..."></textarea></div>
+      </div>
+    </div>
+
+    <div class="card" id="visit-section" style="display:none">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0">
+        <span>방문 이력</span>
+        <button class="btn-ghost" style="font-size:12px;padding:4px 10px" onclick="openVisitModal()">+ 추가</button>
+      </div>
+      <div id="visit-list" style="margin-top:10px"></div>
+    </div>
+
+    <div class="save-bar">
+      <button class="btn-primary" onclick="saveCustomer()">저장</button>
+      <button class="btn-ghost" onclick="backToList()">취소</button>
+      <button class="btn-danger" id="delete-btn" style="display:none;margin-left:auto" onclick="deleteCustomer()">삭제</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 방문 추가 모달 -->
+<div class="modal-backdrop" id="visit-modal" onclick="if(event.target===this)closeVisitModal()">
+  <div class="modal">
+    <div class="modal-title">방문 기록 추가</div>
+    <div class="field" style="margin-bottom:10px"><label>방문 날짜 *</label><input type="date" id="m-date"></div>
+    <div class="field" style="margin-bottom:10px"><label>촬영 컨셉 *</label><select id="m-concept"><option value="">선택</option></select></div>
+    <div class="field" style="margin-bottom:10px"><label>결제 금액 (원)</label><input type="number" id="m-price" placeholder="예: 80000"></div>
+    <div class="field"><label>메모</label><input type="text" id="m-note" placeholder="특이사항 등"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeVisitModal()">취소</button>
+      <button class="btn-primary" onclick="saveVisit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import{getFirestore,collection,doc,setDoc,deleteDoc,onSnapshot,orderBy,query}from"https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+// ★ 비밀번호 여기서 변경하세요 ★
+const PASSWORD = "green1234";
+
+const app=initializeApp({
+  apiKey:"AIzaSyCCuG8z9m6drZzn4vv3u23ylaC-5GBHo3c",
+  authDomain:"fx-greenapple.firebaseapp.com",
+  projectId:"fx-greenapple",
+  storageBucket:"fx-greenapple.firebasestorage.app",
+  messagingSenderId:"310568073190",
+  appId:"1:310568073190:web:e50a6dde932107d059c827"
+});
+const db=getFirestore(app);
+
+const CONCEPTS=[
+  {name:'오늘도 최애가 되고 싶어',cls:'badge-purple'},
+  {name:'마린걸',cls:'badge-teal'},
+  {name:'여름한조각',cls:'badge-green'},
+  {name:'체리베리벌쓰데이',cls:'badge-pink'},
+  {name:'Good Night Bunny',cls:'badge-pink'},
+  {name:'증명사진',cls:'badge-gray'},
+  {name:'프로필',cls:'badge-amber'},
+  {name:'기타',cls:'badge-gray'},
+];
+const RETOUCH=['얼굴 넓이 줄이기','볼살 줄이기','광대뼈 줄이기','얼굴 짧게','눈 키우기','눈 뒷트임','코 넓이 줄이기','코 길이 늘리기','코 길이 줄이기','눈 간격 줄이기','눈 간격 늘리기','이마 길이 늘리기','이마 길이 줄이기'];
+const ACOLORS=[{bg:'#E6F1FB',fg:'#185FA5'},{bg:'#EEEDFE',fg:'#534AB7'},{bg:'#E1F5EE',fg:'#0F6E56'},{bg:'#FBEAF0',fg:'#993556'},{bg:'#FAEEDA',fg:'#854F0B'}];
+const MONTHS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+let customers=[],editingId=null,retouchVals={},bFilter='all';
+
+// 로그인
+function checkLogin(){
+  return sessionStorage.getItem('ga-auth')==='ok';
+}
+window.checkPw=function(){
+  const v=document.getElementById('pw-input').value;
+  if(v===PASSWORD){
+    sessionStorage.setItem('ga-auth','ok');
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('main-app').style.display='block';
+    initApp();
+  } else {
+    document.getElementById('pw-error').textContent='비밀번호가 틀렸어요';
+    document.getElementById('pw-input').value='';
+    setTimeout(()=>document.getElementById('pw-error').textContent='',2000);
+  }
+};
+window.logout=function(){
+  sessionStorage.removeItem('ga-auth');
+  location.reload();
+};
+
+if(checkLogin()){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-app').style.display='block';
+  initApp();
+}
+
+function initApp(){
+  fillConceptSelect();
+  initR();
+  onSnapshot(query(collection(db,'customers'),orderBy('createdAt','desc')),(snap)=>{
+    customers=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderList();sync('ok');
+  },(e)=>{console.error(e);sync('err')});
+}
+
+function acol(n){return ACOLORS[((n||'').charCodeAt(0)||0)%ACOLORS.length]}
+function ccls(n){const c=CONCEPTS.find(x=>x.name===n);return c?c.cls:'badge-gray'}
+
+function sync(s){
+  const dot=document.getElementById('sdot'),txt=document.getElementById('stxt');
+  if(s==='ok'){dot.className='sync-dot';txt.textContent='동기화됨'}
+  else if(s==='ing'){dot.className='sync-dot syncing';txt.textContent='저장 중'}
+  else{dot.className='sync-dot err';txt.textContent='오프라인'}
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+async function fsSet(data){
+  sync('ing');
+  try{await setDoc(doc(db,'customers',data.id),data);sync('ok');}
+  catch(e){sync('err');toast('저장 실패');throw e}
+}
+async function fsDel(id){
+  sync('ing');
+  try{await deleteDoc(doc(db,'customers',id));sync('ok');}
+  catch(e){sync('err');toast('삭제 실패')}
+}
+
+function initR(v={}){
+  retouchVals={};RETOUCH.forEach(k=>retouchVals[k]=v[k]||0);renderR();
+}
+function renderR(){
+  document.getElementById('retouch-body').innerHTML=RETOUCH.map(item=>`
+    <tr><td>${item}</td>
+    ${[0,1,2,3].map(n=>`<td style="text-align:center">
+      <button class="level-btn ${retouchVals[item]===n?'sel':''}" onclick="SR('${item}',${n})">${n}</button>
+    </td>`).join('')}</tr>`).join('');
+}
+window.SR=function(k,v){retouchVals[k]=v;renderR()};
+
+function fillConceptSelect(){
+  document.getElementById('m-concept').innerHTML=
+    '<option value="">선택</option>'+CONCEPTS.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');
+}
+
+window.showTab=function(t){
+  ['list','booking','new'].forEach(id=>{
+    document.getElementById('tab-'+id).style.display=id===t?'block':'none';
+  });
+  document.querySelectorAll('.nav-btn').forEach((el,i)=>{
+    el.classList.toggle('active',['list','booking','new'][i]===t||(t==='new'&&i===2));
+  });
+  if(t==='booking')renderB();
+  if(t==='new'&&!editingId){resetF();document.getElementById('form-title').textContent='신규 고객 등록';document.getElementById('visit-section').style.display='none';document.getElementById('delete-btn').style.display='none';}
+};
+window.openNew=function(){editingId=null;showTab('new')};
+window.backToList=function(){editingId=null;showTab('list')};
+
+function resetF(){
+  ['f-name','f-phone','f-insta','f-memo','f-complex'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  document.getElementById('f-size').value='';
+  document.getElementById('consent-sns').checked=false;
+  initR();
+}
+
+function renderList(filter=''){
+  const list=document.getElementById('customer-list');
+  const filtered=customers.filter(c=>(c.name||'').includes(filter)||(c.phone||'').includes(filter));
+  if(!filtered.length){
+    list.innerHTML=`<div class="empty-state">👥<br><br>등록된 고객이 없어요<br><br><button class="btn-primary" onclick="openNew()">첫 고객 등록하기</button></div>`;
+    return;
+  }
+  list.innerHTML=filtered.map(c=>{
+    const col=acol(c.name),visits=c.visits||[],last=visits[0];
+    return`<div class="customer-row" onclick="openC('${c.id}')">
+      <div class="avatar" style="background:${col.bg};color:${col.fg}">${(c.name||'?')[0]}</div>
+      <div class="cinfo">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="cname">${c.name}</span>
+          ${last?`<span class="badge ${ccls(last.concept)}" style="font-size:10px">${last.concept}</span>`:''}
+        </div>
+        <div class="cmeta">${c.phone||''}${c.insta?' · '+c.insta:''}</div>
+      </div>
+      <span class="badge ${c.consentSns?'badge-green':'badge-gray'}">${c.consentSns?'동의':'미동의'}</span>
+      <div style="font-size:12px;color:var(--text3);white-space:nowrap">${visits.length}회</div>
+    </div>`;
+  }).join('');
+}
+window.filterCustomers=function(v){renderList(v)};
+
+window.openC=function(id){
+  const c=customers.find(x=>x.id===id);if(!c)return;
+  editingId=id;
+  document.getElementById('form-title').textContent=c.name+' 님';
+  document.getElementById('f-name').value=c.name||'';
+  document.getElementById('f-phone').value=c.phone||'';
+  document.getElementById('f-insta').value=c.insta||'';
+  document.getElementById('f-size').value=c.size||'';
+  document.getElementById('f-memo').value=c.memo||'';
+  document.getElementById('f-complex').value=c.complex||'';
+  document.getElementById('consent-sns').checked=!!c.consentSns;
+  initR(c.retouch||{});
+  renderV(c.visits||[]);
+  document.getElementById('visit-section').style.display='block';
+  document.getElementById('delete-btn').style.display='block';
+  showTab('new');
+};
+
+function renderV(visits){
+  const el=document.getElementById('visit-list');
+  if(!visits.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:8px 0">방문 이력이 없어요</div>';return}
+  el.innerHTML=visits.map(v=>`
+    <div class="visit-item">
+      <div class="vdate">${v.date}</div>
+      <div>
+        <span class="badge ${ccls(v.concept)}">${v.concept}</span>
+        ${v.price?`<div style="font-size:12px;color:var(--text2);margin-top:3px">${parseInt(v.price).toLocaleString()}원</div>`:''}
+        ${v.note?`<div class="vnote">${v.note}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+window.openVisitModal=function(){
+  document.getElementById('m-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('m-concept').value='';
+  document.getElementById('m-price').value='';
+  document.getElementById('m-note').value='';
+  document.getElementById('visit-modal').classList.add('open');
+};
+window.closeVisitModal=function(){document.getElementById('visit-modal').classList.remove('open')};
+
+window.saveVisit=async function(){
+  const date=document.getElementById('m-date').value;
+  const concept=document.getElementById('m-concept').value;
+  if(!date||!concept){alert('날짜와 컨셉을 선택해주세요');return}
+  const c=customers.find(x=>x.id===editingId);if(!c)return;
+  if(!c.visits)c.visits=[];
+  c.visits.unshift({date,concept,price:document.getElementById('m-price').value,note:document.getElementById('m-note').value});
+  await fsSet(c);renderV(c.visits);closeVisitModal();toast('방문 기록 저장 ✓');
+};
+
+window.saveCustomer=async function(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){alert('이름을 입력해주세요');return}
+  const c=customers.find(x=>x.id===editingId);
+  const data={
+    id:editingId||'c'+Date.now(),
+    name,
+    phone:document.getElementById('f-phone').value.trim(),
+    insta:document.getElementById('f-insta').value.trim(),
+    size:document.getElementById('f-size').value,
+    memo:document.getElementById('f-memo').value.trim(),
+    complex:document.getElementById('f-complex').value.trim(),
+    consentSns:document.getElementById('consent-sns').checked,
+    retouch:{...retouchVals},
+    visits:c?c.visits||[]:[],
+    createdAt:c?c.createdAt:Date.now(),
+  };
+  await fsSet(data);toast('저장됨 ✓');backToList();
+};
+
+window.deleteCustomer=async function(){
+  const name=document.getElementById('f-name').value;
+  if(!confirm(name+' 님의 정보를 삭제할까요?'))return;
+  await fsDel(editingId);editingId=null;toast('삭제됨');backToList();
+};
+
+// 엑셀 다운로드
+window.exportExcel=function(){
+  if(!customers.length){toast('다운로드할 고객이 없어요');return}
+  const header=['이름','연락처','인스타그램','의상사이즈','SNS동의','메모','방문횟수','최근컨셉','최근방문일','최근결제액',...RETOUCH,'기타컴플렉스'];
+  const rows=customers.map(c=>{
+    const visits=c.visits||[];
+    const last=visits[0]||{};
+    const r=c.retouch||{};
+    return[
+      c.name||'',c.phone||'',c.insta||'',c.size||'',
+      c.consentSns?'동의':'미동의',
+      c.memo||'',visits.length,last.concept||'',last.date||'',
+      last.price?parseInt(last.price)+'원':'',
+      ...RETOUCH.map(k=>r[k]!=null?r[k]:0),
+      c.complex||''
+    ];
+  });
+  const csv=[header,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const bom='\uFEFF';
+  const blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`고객명단_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('다운로드 완료 ✓');
+};
+
+function renderB(){
+  const all=customers.flatMap(c=>(c.visits||[]).map(v=>({...v,customerName:c.name,customerId:c.id})));
+  const now=new Date(),tm=now.getMonth(),ty=now.getFullYear();
+  const mv=all.filter(v=>{try{const d=new Date(v.date);return d.getMonth()===tm&&d.getFullYear()===ty}catch{return false}});
+  const rev=mv.reduce((s,v)=>s+(parseInt(v.price)||0),0);
+  const cc={};all.forEach(v=>{cc[v.concept]=(cc[v.concept]||0)+1});
+  const top=Object.entries(cc).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('stat-row').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${customers.length}</div><div class="stat-label">전체 고객</div></div>
+    <div class="stat-card"><div class="stat-num">${mv.length}</div><div class="stat-label">이번 달 방문</div></div>
+    <div class="stat-card"><div class="stat-num" style="font-size:14px">${rev?rev.toLocaleString()+'원':'—'}</div><div class="stat-label">이번 달 매출</div></div>
+    <div class="stat-card"><div class="stat-num" style="font-size:12px;padding-top:4px;line-height:1.3">${top?top[0]:'—'}</div><div class="stat-label">인기 컨셉</div></div>`;
+  document.getElementById('concept-filter').innerHTML=
+    [{key:'all',label:'전체'},...CONCEPTS.map(c=>({key:c.name,label:c.name}))].map(ch=>
+      `<button class="filter-chip ${bFilter===ch.key?'active':''}" onclick="setBF('${ch.key}')">${ch.label}</button>`
+    ).join('');
+  let sorted=[...all].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(bFilter!=='all')sorted=sorted.filter(v=>v.concept===bFilter);
+  if(!sorted.length){document.getElementById('booking-list').innerHTML='<div class="empty-state">📅<br><br>방문 기록이 없어요</div>';return}
+  document.getElementById('booking-list').innerHTML=sorted.map(v=>{
+    const d=new Date(v.date);
+    return`<div class="booking-card" onclick="openC('${v.customerId}')">
+      <div class="bdate"><div class="bday">${isNaN(d)?v.date:d.getDate()}</div><div class="bmonth">${isNaN(d)?'':MONTHS[d.getMonth()]}</div></div>
+      <div class="bdiv"></div>
+      <div class="binfo">
+        <div class="bname">${v.customerName}</div>
+        <div class="bmeta">
+          <span class="badge ${ccls(v.concept)}">${v.concept}</span>
+          ${v.price?`<span style="font-size:12px;color:var(--text2)">${parseInt(v.price).toLocaleString()}원</span>`:''}
+          ${v.note?`<span style="font-size:12px;color:var(--text3)">${v.note}</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.setBF=function(k){bFilter=k;renderB()};
+</script>
+</body>
+</html>
