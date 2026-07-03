@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>영수증 → 엑셀 변환기</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --border: #e2e5ea;
+    --accent: #2563eb;
+    --accent-light: #eff4ff;
+    --text: #1a1d23;
+    --text-sub: #6b7280;
+    --green: #16a34a;
+    --red: #dc2626;
+    --row-odd: #ffffff;
+    --row-even: #f9fafb;
+  }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  header p {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin-top: 6px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg);
+    position: relative;
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .upload-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+  }
+
+  .upload-zone h2 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .upload-zone p {
+    font-size: 12px;
+    color: var(--text-sub);
+  }
+
+  /* Preview thumbnails */
+  .preview-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .thumb {
+    position: relative;
+    width: 80px;
+    height: 80px;
+  }
+
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .thumb .remove-btn {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  .thumb .status-badge {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  .status-badge.done { background: #dcfce7; color: var(--green); }
+  .status-badge.loading { background: #fef9c3; color: #92400e; }
+  .status-badge.error { background: #fee2e2; color: var(--red); }
+
+  /* Analyze button */
+  .btn-analyze {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    margin-top: 14px;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-analyze:hover { background: #1d4ed8; }
+  .btn-analyze:disabled { background: #93c5fd; cursor: not-allowed; }
+
+  /* Progress */
+  .progress-bar-wrap {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    margin-top: 12px;
+    overflow: hidden;
+    display: none;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+
+  /* Table */
+  .table-wrap {
+    overflow-x: auto;
+    margin-top: 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 900px;
+  }
+
+  thead th {
+    background: #f1f5f9;
+    padding: 10px 8px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--text-sub);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody tr:nth-child(odd) { background: var(--row-odd); }
+  tbody tr:nth-child(even) { background: var(--row-even); }
+
+  tbody td {
+    padding: 9px 8px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  td input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text);
+    padding: 2px 4px;
+    border-radius: 4px;
+    outline: none;
+  }
+
+  td input:focus {
+    background: var(--accent-light);
+    outline: 1px solid var(--accent);
+  }
+
+  .del-row {
+    width: 28px;
+    height: 28px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-sub);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .del-row:hover { background: #fee2e2; border-color: var(--red); color: var(--red); }
+
+  /* Bottom actions */
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .btn-secondary {
+    flex: 1;
+    padding: 12px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text);
+  }
+
+  .btn-secondary:hover { background: var(--bg); }
+
+  .btn-primary {
+    flex: 2;
+    padding: 12px;
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-primary:hover { background: #15803d; }
+
+  /* Count badge */
+  .count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-sub);
+    margin-bottom: 12px;
+  }
+
+  .count-badge span {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 16px;
+  }
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* empty state */
+  .empty-state {
+    text-align: center;
+    padding: 32px;
+    color: var(--text-sub);
+    font-size: 13px;
+  }
+
+  /* spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1d23;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📄 영수증 → 엑셀 변환기</h1>
+  <p>영수증 사진을 올리면 AI가 자동으로 경비 데이터를 추출해요</p>
+</header>
+
+<!-- API Key -->
+<div class="card" id="apiKeyCard">
+  <div class="section-title">🔑 API 키 설정</div>
+  <p style="font-size:12px;color:var(--text-sub);margin-bottom:10px;">Anthropic API 키를 입력하세요. 키는 이 기기에만 저장되며 외부로 전송되지 않아요.</p>
+  <div style="display:flex;gap:8px;">
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." 
+      style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;">
+    <button onclick="saveApiKey()" style="padding:10px 16px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;white-space:nowrap;">저장</button>
+  </div>
+  <p style="font-size:11px;color:var(--text-sub);margin-top:8px;">
+    키 발급: <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--accent);">console.anthropic.com</a>
+  </p>
+</div>
+
+<!-- Upload -->
+<div class="card">
+  <div class="upload-zone" id="uploadZone">
+    <input type="file" id="fileInput" accept="image/*" multiple>
+    <div class="upload-icon">📷</div>
+    <h2>영수증 사진 올리기</h2>
+    <p>여러 장 한꺼번에 올려도 돼요 · JPG, PNG, WEBP</p>
+  </div>
+
+  <div class="preview-grid" id="previewGrid"></div>
+
+  <button class="btn-analyze" id="analyzeBtn" disabled onclick="analyzeAll()">
+    <span id="analyzeBtnText">✨ AI로 분석하기</span>
+  </button>
+
+  <div class="progress-bar-wrap" id="progressWrap">
+    <div class="progress-bar" id="progressBar" style="width:0%"></div>
+  </div>
+</div>
+
+<!-- Result table -->
+<div class="card" id="resultCard" style="display:none">
+  <div class="section-title">📊 추출된 경비 내역</div>
+  <div class="count-badge">총 <span id="rowCount">0</span>건</div>
+
+  <div class="table-wrap">
+    <table id="resultTable">
+      <thead>
+        <tr>
+          <th>년월</th>
+          <th>일자</th>
+          <th>계정</th>
+          <th>계정명</th>
+          <th>카드종류</th>
+          <th>거래처코드</th>
+          <th>거래처명</th>
+          <th>일자및내역</th>
+          <th>공급가액</th>
+          <th>자변(지출)</th>
+          <th>대변(입금)</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="resultBody">
+      </tbody>
+    </table>
+  </div>
+
+  <div class="actions">
+    <button class="btn-secondary" onclick="addRow()">+ 행 추가</button>
+    <button class="btn-primary" onclick="downloadCSV()">⬇ 엑셀(CSV)로 저장</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// API Key
+let apiKey = localStorage.getItem('receipt_api_key') || '';
+const apiKeyInput = document.getElementById('apiKeyInput');
+const apiKeyCard = document.getElementById('apiKeyCard');
+
+if (apiKey) {
+  apiKeyInput.value = apiKey;
+  apiKeyCard.style.borderColor = '#86efac';
+}
+
+function saveApiKey() {
+  const val = apiKeyInput.value.trim();
+  if (!val.startsWith('sk-ant-')) {
+    showToast('❌ 올바른 API 키 형식이 아니에요 (sk-ant-로 시작해야 해요)');
+    return;
+  }
+  apiKey = val;
+  localStorage.setItem('receipt_api_key', apiKey);
+  apiKeyCard.style.borderColor = '#86efac';
+  showToast('✅ API 키가 저장됐어요!');
+}
+
+const fileInput = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+const previewGrid = document.getElementById('previewGrid');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const analyzeBtnText = document.getElementById('analyzeBtnText');
+const resultCard = document.getElementById('resultCard');
+const resultBody = document.getElementById('resultBody');
+const rowCount = document.getElementById('rowCount');
+const progressWrap = document.getElementById('progressWrap');
+const progressBar = document.getElementById('progressBar');
+
+let files = []; // {file, dataUrl, status: 'waiting'|'loading'|'done'|'error'}
+
+// Drag & drop
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  handleFiles([...e.dataTransfer.files]);
+});
+
+fileInput.addEventListener('change', () => {
+  handleFiles([...fileInput.files]);
+  fileInput.value = '';
+});
+
+function handleFiles(newFiles) {
+  newFiles.filter(f => f.type.startsWith('image/')).forEach(f => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const obj = { file: f, dataUrl: e.target.result, status: 'waiting' };
+      files.push(obj);
+      renderPreviews();
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+function renderPreviews() {
+  previewGrid.innerHTML = '';
+  files.forEach((obj, i) => {
+    const div = document.createElement('div');
+    div.className = 'thumb';
+    div.innerHTML = `
+      <img src="${obj.dataUrl}" alt="영수증 ${i+1}">
+      <button class="remove-btn" onclick="removeFile(${i})">×</button>
+      <div class="status-badge ${obj.status === 'waiting' ? '' : obj.status}">
+        ${obj.status === 'waiting' ? '대기' : obj.status === 'loading' ? '분석중' : obj.status === 'done' ? '완료' : '오류'}
+      </div>
+    `;
+    previewGrid.appendChild(div);
+  });
+  analyzeBtn.disabled = files.length === 0;
+}
+
+function removeFile(i) {
+  files.splice(i, 1);
+  renderPreviews();
+}
+
+let rows = [];
+
+async function analyzeAll() {
+  if (!files.length) return;
+
+  if (!apiKey) {
+    showToast('❌ 먼저 API 키를 입력하고 저장해주세요!');
+    apiKeyInput.focus();
+    return;
+  }
+
+  analyzeBtn.disabled = true;
+  analyzeBtnText.innerHTML = '<span class="spinner"></span> 분석 중...';
+  progressWrap.style.display = 'block';
+  progressBar.style.width = '0%';
+
+  const waiting = files.filter(f => f.status === 'waiting');
+  let done = 0;
+
+  for (const obj of waiting) {
+    obj.status = 'loading';
+    renderPreviews();
+    try {
+      const extracted = await analyzeReceipt(obj.dataUrl);
+      rows.push(...extracted);
+      obj.status = 'done';
+    } catch(e) {
+      obj.status = 'error';
+      console.error('분석 오류:', e);
+      if (!e.message.includes('API 오류') && !e.message.includes('JSON')) {
+        showToast('❌ 오류: ' + e.message.slice(0, 60));
+      }
+    }
+    done++;
+    progressBar.style.width = `${Math.round((done / waiting.length) * 100)}%`;
+    renderPreviews();
+  }
+
+  renderTable();
+  resultCard.style.display = 'block';
+  resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  analyzeBtnText.textContent = '✨ 추가 분석하기';
+  analyzeBtn.disabled = false;
+
+  showToast(`${done}장 분석 완료! 내용을 확인하고 저장하세요 ✅`);
+}
+
+async function analyzeReceipt(dataUrl) {
+  const base64 = dataUrl.split(',')[1];
+  const mediaType = dataUrl.split(';')[0].split(':')[1];
+
+  const today = new Date();
+  const yyyymm = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+
+  const systemPrompt = `당신은 한국 영수증에서 경비 데이터를 추출하는 전문가입니다.
+영수증 이미지를 분석하여 아래 JSON 배열 형식으로만 응답하세요. 마크다운이나 설명 없이 JSON만 출력하세요.
+
+[
+  {
+    "년월": "YYYY-MM",
+    "일자": "YYYY-MM-DD",
+    "계정": "계정코드 (예: 5005=소모품비, 5012=세금과공과, 1001=보통예금, 2001=미지급비용, 4004=여비교통비, 5001=급여, 5003=복리후생비)",
+    "계정명": "계정명 (예: 소모품비, 복리후생비, 접대비, 여비교통비, 세금과공과)",
+    "카드종류": "법인국민카드",
+    "거래처코드": "",
+    "거래처명": "가게/업체명",
+    "일자및내역": "YYYY-MM-DD 구매내용",
+    "공급가액": 공급가액숫자(VAT제외, 숫자만),
+    "자변": 지출금액숫자(숫자만),
+    "대변": 0
+  }
+]
+
+규칙:
+- 날짜가 없으면 오늘(${yyyymm})로 추정
+- 공급가액 = 총액 / 1.1 (VAT 10% 제외)
+- 자변 = 총 지출 금액
+- 식당/카페 → 계정: 5003, 계정명: 복리후생비
+- 교통비 → 계정: 4004, 계정명: 여비교통비
+- 사무용품/소모품 → 계정: 5005, 계정명: 소모품비
+- 접대 → 계정: 5007, 계정명: 접대비
+- 세금/공과금 → 계정: 5012, 계정명: 세금과공과
+- 영수증이 여러 항목이면 항목별로 분리하지 말고 1건으로 처리`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: { type: 'base64', media_type: mediaType, data: base64 }
+          },
+          { type: 'text', text: '이 영수증에서 경비 데이터를 추출해주세요.' }
+        ]
+      }]
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    const msg = err?.error?.message || `API 오류 ${response.status}`;
+    showToast('❌ ' + msg);
+    throw new Error(msg);
+  }
+
+  const data = await response.json();
+  console.log('API 응답:', JSON.stringify(data));
+
+  if (!data.content || !data.content.length) {
+    showToast('❌ API 응답이 비어있어요');
+    throw new Error('빈 응답');
+  }
+
+  const text = data.content.map(c => c.text || '').join('');
+  console.log('텍스트:', text);
+
+  // JSON 배열 추출 (다양한 포맷 대응)
+  const jsonMatch = text.match(/\[[\s\S]*\]/);
+  if (!jsonMatch) {
+    showToast('❌ JSON 파싱 실패: ' + text.slice(0, 50));
+    throw new Error('JSON 없음: ' + text);
+  }
+
+  const parsed = JSON.parse(jsonMatch[0]);
+  return parsed;
+}
+
+function renderTable() {
+  resultBody.innerHTML = '';
+  rows.forEach((row, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input value="${row.년월 || ''}" onchange="rows[${i}]['년월']=this.value"></td>
+      <td><input value="${row.일자 || ''}" onchange="rows[${i}]['일자']=this.value"></td>
+      <td><input value="${row.계정 || ''}" onchange="rows[${i}]['계정']=this.value" style="width:60px"></td>
+      <td><input value="${row.계정명 || ''}" onchange="rows[${i}]['계정명']=this.value"></td>
+      <td><input value="${row.카드종류 || '법인국민카드'}" onchange="rows[${i}]['카드종류']=this.value"></td>
+      <td><input value="${row.거래처코드 || ''}" onchange="rows[${i}]['거래처코드']=this.value" style="width:70px"></td>
+      <td><input value="${row.거래처명 || ''}" onchange="rows[${i}]['거래처명']=this.value"></td>
+      <td><input value="${row.일자및내역 || ''}" onchange="rows[${i}]['일자및내역']=this.value"></td>
+      <td><input value="${row.공급가액 || ''}" onchange="rows[${i}]['공급가액']=this.value" style="width:80px;text-align:right"></td>
+      <td><input value="${row.자변 || ''}" onchange="rows[${i}]['자변']=this.value" style="width:80px;text-align:right"></td>
+      <td><input value="${row.대변 || ''}" onchange="rows[${i}]['대변']=this.value" style="width:80px;text-align:right"></td>
+      <td><button class="del-row" onclick="deleteRow(${i})">×</button></td>
+    `;
+    resultBody.appendChild(tr);
+  });
+  rowCount.textContent = rows.length;
+}
+
+function deleteRow(i) {
+  rows.splice(i, 1);
+  renderTable();
+}
+
+function addRow() {
+  const today = new Date();
+  const yyyymm = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+  const yyyymmdd = `${yyyymm}-${String(today.getDate()).padStart(2,'0')}`;
+  rows.push({
+    년월: yyyymm, 일자: yyyymmdd, 계정: '', 계정명: '',
+    카드종류: '법인국민카드', 거래처코드: '', 거래처명: '',
+    일자및내역: '', 공급가액: '', 자변: '', 대변: ''
+  });
+  renderTable();
+}
+
+function downloadCSV() {
+  if (!rows.length) { showToast('저장할 데이터가 없어요'); return; }
+
+  const headers = ['년월','일자','계정','계정명','카드종류','거래처코드','거래처명','일자및내역','공급가액','자변','대변'];
+  const lines = [headers.join(',')];
+
+  rows.forEach(r => {
+    const vals = headers.map(h => {
+      const v = String(r[h] ?? '').replace(/"/g, '""');
+      return `"${v}"`;
+    });
+    lines.push(vals.join(','));
+  });
+
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const today = new Date();
+  a.href = url;
+  a.download = `경비내역_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV 저장 완료! 엑셀에서 바로 열 수 있어요 ✅');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
