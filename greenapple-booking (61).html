@@ -1,0 +1,2697 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>예약 - 풋사과 포토클럽 · 불만고양이레코즈</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --apple:#4D8B3A;--apple-light:#EBF5E7;--apple-mid:#C6E0BC;--apple-dark:#2E5822;
+  --cat:#2B2B2B;--cat-light:#F0EDEA;--cat-mid:#C8C2BB;
+  --ink:#1A1A18;--ink-mid:#5A5A55;--ink-faint:#9A9A92;
+  --line:rgba(26,26,24,0.10);--surface:#FAFAF8;--white:#FFFFFF;
+  --radius:12px;--radius-sm:8px;--font:'Noto Sans KR',-apple-system,sans-serif;
+  --ba:var(--apple);--bl:var(--apple-light);--bm:var(--apple-mid);--bd:var(--apple-dark);
+}
+html{font-size:16px;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font);background:var(--surface);color:var(--ink);min-height:100vh}
+.tab-nav{display:flex;background:var(--white);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100}
+.tab-btn{flex:1;padding:14px 10px;background:none;border:none;cursor:pointer;font-family:var(--font);font-size:13px;color:var(--ink-faint);border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+.tab-btn.active{color:var(--ink);font-weight:500;border-bottom-color:var(--apple)}
+.tab-btn.admin-tab.active{border-bottom-color:var(--cat)}
+.page-header{text-align:center;padding:2rem 1.5rem 1.5rem;background:var(--white);border-bottom:1px solid var(--line)}
+.header-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.14em;color:var(--ink-faint);text-transform:uppercase;margin-bottom:.75rem}
+.header-eyebrow::before,.header-eyebrow::after{content:'';display:block;width:18px;height:1px;background:var(--line)}
+.header-title{font-size:13px;color:var(--ink-mid);font-weight:300}
+.header-formula{font-size:18px;font-weight:400;color:var(--ink);letter-spacing:-.01em;margin:0}
+.container{max-width:540px;margin:0 auto;padding:0 1.25rem 4rem}
+.section{margin-bottom:2rem}
+.section-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:.875rem}
+.divider{height:1px;background:var(--line);margin:2rem 0}
+.brand-wrap{max-width:540px;margin:0 auto;padding:1.75rem 1.25rem 0}
+.brand-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.brand-card{padding:1.25rem 1rem;border:2px solid var(--line);border-radius:var(--radius);cursor:pointer;text-align:center;background:var(--white);transition:border-color .15s,background .15s,transform .15s;position:relative}
+.brand-card:hover{transform:translateY(-2px)}
+.apple-card:hover{border-color:var(--apple-mid);background:var(--apple-light)}
+.cat-card:hover{border-color:var(--cat-mid);background:var(--cat-light)}
+.apple-card.selected{border-color:var(--apple);background:var(--apple-light)}
+.cat-card.selected{border-color:var(--cat);background:var(--cat-light)}
+.brand-icon{font-size:28px;margin-bottom:8px}
+.brand-name{font-size:13px;font-weight:500;line-height:1.4}
+.brand-type{display:inline-block;margin-top:6px;font-size:11px;padding:3px 10px;border-radius:99px}
+.apple-card .brand-type{background:var(--apple-mid);color:var(--apple-dark)}
+.cat-card .brand-type{background:var(--cat-mid);color:var(--cat)}
+.brand-dot{position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;display:none}
+.apple-card.selected .brand-dot{display:block;background:var(--apple)}
+.cat-card.selected .brand-dot{display:block;background:var(--cat)}
+.form-block{display:none;animation:fadeUp .22s ease both}
+.form-block.visible{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.concept-list{display:flex;flex-direction:column;gap:8px}
+.concept-card{display:flex;align-items:center;gap:14px;padding:13px 16px;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--white);cursor:pointer;position:relative;transition:border-color .15s,background .15s}
+.concept-card:hover{border-color:var(--bm);background:var(--bl)}
+.concept-card.selected{border-color:var(--ba);background:var(--bl)}
+.concept-emoji{font-size:20px;flex-shrink:0;width:30px;text-align:center}
+.concept-body{flex:1}
+.concept-name{font-size:14px;font-weight:500}
+.concept-sub{font-size:11px;color:var(--ink-faint);margin-top:2px;font-weight:300}
+.concept-check{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:50%;background:var(--ba);display:none;align-items:center;justify-content:center}
+.concept-card.selected .concept-check{display:flex}
+.concept-check svg{width:9px;height:9px}
+.cut-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cut-btn{padding:12px 10px;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--white);cursor:pointer;text-align:center;font-family:var(--font);transition:border-color .15s,background .15s}
+.cut-btn:hover{border-color:var(--bm);background:var(--bl)}
+.cut-btn.selected{border-color:var(--ba);background:var(--bl)}
+.cut-name{font-size:14px;font-weight:500}
+.cut-desc{font-size:11px;color:var(--ink-faint);margin-top:3px}
+.cut-hint{font-size:11px;color:var(--apple-dark);text-align:center;margin-top:8px;min-height:16px;transition:opacity .2s}
+.cal-wrap{background:var(--white);border:1.5px solid var(--line);border-radius:var(--radius);padding:1.25rem}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.cal-month{font-size:15px;font-weight:500}
+.cal-nav{background:none;border:none;cursor:pointer;padding:6px 10px;border-radius:var(--radius-sm);color:var(--ink-mid);font-size:18px;transition:background .1s}
+.cal-nav:hover{background:var(--surface)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dow{font-size:11px;color:var(--ink-faint);text-align:center;padding:4px 0 8px}
+.cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--ink);transition:background .1s;position:relative}
+.cal-day:hover:not(.disabled):not(.empty){background:var(--bl)}
+.cal-day.today{font-weight:500;color:var(--ba)}
+.cal-day.selected{background:var(--ba)!important;color:white!important;border-radius:50%}
+.cal-day.disabled{color:var(--ink-faint);cursor:default;opacity:.4}
+.cal-day.empty{cursor:default}
+.cal-day .bdot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--apple)}
+.cal-day.selected .bdot{background:white}
+.time-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:7px}
+.time-btn{padding:9px 6px;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--white);font-size:13px;cursor:pointer;text-align:center;font-family:var(--font);color:var(--ink);line-height:1.3;transition:border-color .15s,background .15s}
+.time-btn:hover:not(.booked){border-color:var(--bm);background:var(--bl)}
+.time-btn.selected{border-color:var(--ba);background:var(--ba);color:white;font-weight:500}
+.time-btn.booked{color:var(--ink-faint);cursor:not-allowed;text-decoration:line-through;background:var(--surface)}
+.time-hint{font-size:12px;color:var(--ink-faint);margin-top:8px}
+.form-group{margin-bottom:12px}
+.form-label{font-size:12px;color:var(--ink-mid);margin-bottom:6px;display:block}
+input[type=text],input[type=tel],input[type=password],textarea{width:100%;font-size:14px;padding:11px 14px;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--white);color:var(--ink);font-family:var(--font);outline:none;transition:border-color .15s}
+input:focus,textarea:focus{border-color:var(--ba)}
+input::placeholder,textarea::placeholder{color:var(--ink-faint)}
+textarea{resize:vertical;min-height:80px}
+.summary-box{background:var(--white);border:1.5px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.summary-header{padding:11px 16px;background:var(--bl);border-bottom:1px solid var(--bm);font-size:12px;font-weight:500;color:var(--bd)}
+.summary-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;font-size:13px;border-bottom:1px solid var(--line)}
+.summary-row:last-child{border-bottom:none}
+.summary-key{color:var(--ink-faint)}
+.summary-val{color:var(--ink);font-weight:500}
+.summary-total{background:var(--surface)}
+.summary-total .summary-key{color:var(--ink);font-weight:500}
+.summary-total .summary-val{color:var(--bd);font-size:16px}
+.summary-empty{padding:1.5rem;text-align:center;font-size:13px;color:var(--ink-faint)}
+.submit-btn{width:100%;margin-top:1.25rem;padding:15px;background:var(--ba);color:white;border:none;border-radius:var(--radius);font-size:15px;font-weight:500;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
+.submit-btn:hover{opacity:.88}
+.submit-btn:disabled{opacity:.45;cursor:not-allowed}
+.kakao-hint{text-align:center;font-size:12px;color:var(--ink-faint);margin-top:10px}
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.88);align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:12px}
+.loading-overlay.active{display:flex}
+.spinner{width:30px;height:30px;border:2.5px solid var(--apple-mid);border-top-color:var(--apple);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:white;padding:10px 20px;border-radius:99px;font-size:13px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap;z-index:1000}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.success-screen{display:none;text-align:center;padding:4rem 1.5rem}
+.success-screen.active{display:block}
+.success-icon{font-size:48px;margin-bottom:1.25rem;animation:pop .4s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes pop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+.success-title{font-size:22px;font-weight:500;margin-bottom:.5rem}
+.success-sub{font-size:14px;color:var(--ink-mid);line-height:1.7;margin-bottom:1.5rem;font-weight:300}
+.success-card{background:var(--white);border:1.5px solid var(--line);border-radius:var(--radius);padding:1.25rem;text-align:left;margin-bottom:1.5rem;max-width:420px;margin-left:auto;margin-right:auto}
+.success-card-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line)}
+.success-card-row:last-child{border-bottom:none}
+.success-card-row span:first-child{color:var(--ink-faint)}
+.success-card-row span:last-child{font-weight:500}
+.kakao-btn{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;background:#FEE500;color:#191919;border:none;border-radius:var(--radius);font-size:14px;font-weight:500;cursor:pointer;font-family:var(--font);text-decoration:none;transition:opacity .15s}
+.kakao-btn:hover{opacity:.85}
+.booking-id{margin-top:1rem;font-size:11px;color:var(--ink-faint)}
+/* ADMIN */
+#admin-tab{display:none}
+#booking-tab{display:block}
+.admin-container{max-width:600px;margin:0 auto;padding:1.5rem 1.25rem 4rem}
+.admin-login{max-width:340px;margin:3rem auto}
+.admin-login-title{font-size:18px;font-weight:500;margin-bottom:.5rem}
+.admin-login-sub{font-size:13px;color:var(--ink-faint);margin-bottom:1.5rem}
+.admin-cal-wrap{background:var(--white);border:1.5px solid var(--line);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.5rem}
+.booking-list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.booking-list-date{font-size:15px;font-weight:500}
+.booking-count{font-size:12px;color:var(--ink-faint)}
+.booking-card{background:var(--white);border:1.5px solid var(--line);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;transition:border-color .15s}
+.booking-card.confirmed{border-color:var(--apple)}
+.booking-card.cancelled{opacity:.5}
+.booking-card-header{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;border-bottom:1px solid transparent;transition:border-color .15s}
+.booking-card.open .booking-card-header{border-bottom-color:var(--line)}
+.booking-time-badge{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;font-weight:500;white-space:nowrap;flex-shrink:0}
+.booking-card.confirmed .booking-time-badge{background:var(--apple-light);border-color:var(--apple-mid);color:var(--apple-dark)}
+.booking-name{font-size:14px;font-weight:500;flex:1}
+.booking-concept{font-size:12px;color:var(--ink-faint)}
+.status-badge{font-size:11px;padding:3px 10px;border-radius:99px;flex-shrink:0;font-weight:500}
+.status-badge.pending{background:#FFF8E1;color:#8B6914}
+.status-badge.confirmed{background:var(--apple-light);color:var(--apple-dark)}
+.status-badge.cancelled{background:#FEE;color:#C0392B}
+.booking-chevron{color:var(--ink-faint);font-size:12px;transition:transform .2s}
+.booking-card.open .booking-chevron{transform:rotate(180deg)}
+.booking-card-body{display:none;padding:14px 16px}
+.booking-card.open .booking-card-body{display:block}
+.booking-detail-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px;margin-bottom:14px}
+.booking-detail-grid dt{color:var(--ink-faint)}
+.booking-detail-grid dd{font-weight:500}
+.action-row{display:flex;gap:8px}
+.action-btn{flex:1;padding:10px;border-radius:var(--radius-sm);border:1.5px solid var(--line);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;transition:background .15s,border-color .15s,opacity .15s;background:var(--white)}
+.action-btn.confirm{border-color:var(--apple);color:var(--apple-dark)}
+.action-btn.confirm:hover{background:var(--apple-light)}
+.action-btn.edit{border-color:#A0B4E8;color:#2355B0}
+.action-btn.edit:hover{background:#EEF2FC}
+.action-btn.cancel{border-color:#E8A0A0;color:#C0392B}
+.action-btn.cancel:hover{background:#FEE}
+.action-btn:disabled{opacity:.4;cursor:not-allowed}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--ink-faint);font-size:14px}
+.empty-state .empty-icon{font-size:36px;margin-bottom:.75rem}
+.admin-loading{text-align:center;padding:2rem;color:var(--ink-faint);font-size:13px}
+/* MODAL */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center;padding:1rem}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--white);border-radius:var(--radius);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--white);z-index:1}
+.modal-title{font-size:15px;font-weight:500}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink-faint);line-height:1;padding:2px 8px;border-radius:var(--radius-sm);transition:background .1s}
+.modal-close:hover{background:var(--surface)}
+.modal-body{padding:20px}
+.modal-section-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin:16px 0 8px}
+.modal-section-label:first-child{margin-top:0}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:8px;position:sticky;bottom:0;background:var(--white)}
+.modal-footer .action-btn{flex:1;padding:11px;font-size:13px}
+.modal-time-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px}
+.modal-time-btn{padding:8px 4px;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--white);font-size:12px;cursor:pointer;text-align:center;font-family:var(--font);color:var(--ink);line-height:1.3;transition:border-color .12s,background .12s}
+.modal-time-btn:hover:not(.booked){border-color:var(--apple-mid);background:var(--apple-light)}
+.modal-time-btn.selected{border-color:var(--apple);background:var(--apple);color:white;font-weight:500}
+.modal-time-btn.booked{color:var(--ink-faint);cursor:not-allowed;text-decoration:line-through;background:var(--surface)}
+.modal-concept-list{display:flex;flex-direction:column;gap:6px}
+.modal-concept-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--white);cursor:pointer;font-family:var(--font);transition:border-color .12s,background .12s;text-align:left}
+.modal-concept-btn:hover{border-color:var(--apple-mid);background:var(--apple-light)}
+.modal-concept-btn.selected{border-color:var(--apple);background:var(--apple-light)}
+.modal-concept-btn .em{font-size:18px}
+.modal-concept-btn .nm{font-size:13px;font-weight:500;color:var(--ink)}
+.modal-cut-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.modal-cut-btn{padding:10px;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--white);cursor:pointer;text-align:center;font-family:var(--font);transition:border-color .12s,background .12s}
+.modal-cut-btn:hover{border-color:var(--apple-mid);background:var(--apple-light)}
+.modal-cut-btn.selected{border-color:var(--apple);background:var(--apple-light)}
+.modal-cut-btn .nm{font-size:13px;font-weight:500;color:var(--ink)}
+.modal-cut-btn .pr{font-size:11px;color:var(--ink-faint);margin-top:2px}
+
+/* TIME BLOCK MANAGER */
+.time-manager{background:var(--white);border:1.5px solid var(--line);border-radius:var(--radius);padding:1rem;margin-bottom:1rem}
+.time-manager-title{font-size:12px;font-weight:500;color:var(--ink-mid);margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between}
+.time-manager-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px}
+.time-manage-btn{padding:8px 4px;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--white);font-size:12px;cursor:pointer;text-align:center;font-family:var(--font);color:var(--ink);line-height:1.3;transition:all .15s}
+.time-manage-btn.blocked-booking{background:var(--apple-light);border-color:var(--apple);color:var(--apple-dark);cursor:default}
+.time-manage-btn.blocked-manual{background:#FEE;border-color:#E8A0A0;color:#C0392B}
+.time-manage-btn.free{background:var(--white);border-color:var(--line);color:var(--ink)}
+.time-manage-btn.free:hover{border-color:var(--apple);background:var(--apple-light)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:.75rem}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-faint)}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+.cal-day.holiday { background: #FEF2F2 !important; color: #EF4444 !important; }
+.cal-day.holiday::after { content: '휴'; font-size: 8px; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); color: #EF4444; }
+.holiday-btn { padding: 5px 12px; border-radius: 99px; font-size: 12px; font-family: var(--font); cursor: pointer; border: 1.5px solid; transition: background .15s; }
+.holiday-btn.set { border-color: #FCA5A5; color: #DC2626; background: #FEF2F2; }
+.holiday-btn.set:hover { background: #FEE2E2; }
+.holiday-btn.unset { border-color: var(--line); color: var(--ink-mid); background: var(--white); }
+.holiday-btn.unset:hover { background: var(--surface); }
+
+
+/* CONCEPT TAB */
+.concept-tab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 1.25rem; max-width: 600px; margin: 0 auto; }
+@media(max-width:480px){ .concept-tab-grid { grid-template-columns: 1fr 1fr; gap: 10px; padding: 1rem; } }
+.concept-tab-card { border-radius: var(--radius); overflow: hidden; border: 1.5px solid var(--line); background: var(--white); transition: transform .15s, box-shadow .15s; cursor:pointer; }
+.concept-tab-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.concept-tab-img { width: 100%; aspect-ratio: 3/4; object-fit: cover; background: var(--surface); display: block; }
+.concept-tab-img-placeholder { width: 100%; aspect-ratio: 3/4; background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 36px; }
+.concept-tab-body { padding: 12px 14px 14px; }
+.concept-tab-name { font-size: 14px; font-weight: 500; color: var(--ink); margin-bottom: 4px; }
+.concept-tab-desc { font-size: 12px; color: var(--ink-faint); line-height: 1.5; margin-bottom: 8px; }
+.concept-tab-price { font-size: 13px; font-weight: 500; color: var(--apple-dark); }
+.concept-tab-studio { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
+.concept-section-label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); padding: 1.25rem 1.25rem 0; max-width: 600px; margin: 0 auto; }
+
+/* ADMIN CONCEPT MANAGER */
+.admin-concept-card { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+.admin-concept-card .em { font-size: 22px; flex-shrink: 0; }
+.admin-concept-card .info { flex: 1; min-width: 0; }
+.admin-concept-card .cn { font-size: 14px; font-weight: 500; }
+.admin-concept-card .cd { font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
+.admin-concept-card .cp { font-size: 12px; color: var(--apple-dark); margin-top: 2px; font-weight: 500; }
+.concept-action-row { display: flex; gap: 6px; flex-shrink: 0; }
+.concept-action-btn { padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; font-family: var(--font); cursor: pointer; border: 1.5px solid; transition: background .12s; }
+.concept-action-btn.edit-btn { border-color: #A0B4E8; color: #2355B0; background: var(--white); }
+.concept-action-btn.edit-btn:hover { background: #EEF2FC; }
+.concept-action-btn.del-btn { border-color: #E8A0A0; color: #C0392B; background: var(--white); }
+.concept-action-btn.del-btn:hover { background: #FEE; }
+.add-concept-form { background: var(--white); border: 1.5px solid var(--apple-mid); border-radius: var(--radius); padding: 16px; margin-bottom: 1rem; }
+.add-concept-form input, .add-concept-form textarea { width: 100%; font-size: 13px; padding: 9px 12px; border: 1.5px solid var(--line); border-radius: var(--radius-sm); font-family: var(--font); outline: none; margin-bottom: 8px; color: var(--ink); transition: border-color .15s; }
+.add-concept-form input:focus, .add-concept-form textarea:focus { border-color: var(--apple); }
+.add-concept-form textarea { min-height: 60px; resize: vertical; }
+
+
+/* 컨셉 카드 예약버튼 */
+.concept-tab-book-btn{display:block;width:calc(100% - 28px);margin:0 14px 14px;padding:10px;background:var(--apple);color:white;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:opacity .15s}
+.concept-tab-book-btn:hover{opacity:.85}
+
+/* 컨셉 상세 페이지 */
+#concept-detail-page{display:none;pointer-events:none}
+#concept-detail-page.active{display:block;pointer-events:auto}
+.cd-back{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--white);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.cd-back button{background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink-mid);padding:2px 6px;line-height:1;font-family:var(--font)}
+.cd-gallery-wrap{overflow-x:hidden;display:flex;gap:0;padding:0;scrollbar-width:none;-webkit-overflow-scrolling:touch;transition:none}
+.cd-gallery-wrap::-webkit-scrollbar{display:none}
+.cd-gallery-img{width:100vw;aspect-ratio:3/4;max-height:80vh;object-fit:cover;flex-shrink:0;background:var(--surface);scroll-snap-align:start;display:block}
+.cd-gallery-placeholder{width:100vw;aspect-ratio:3/4;max-height:80vh;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:64px;flex-shrink:0}
+.cd-body{max-width:540px;margin:0 auto;padding:1.25rem 1.25rem 5rem}
+.cd-studio{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:.375rem}
+.cd-name{font-size:22px;font-weight:500;color:var(--ink);margin-bottom:.25rem}
+.cd-sub{font-size:13px;color:var(--ink-faint);margin-bottom:.875rem;font-weight:300}
+.cd-desc{font-size:14px;color:var(--ink-mid);line-height:1.7;margin-bottom:1.25rem}
+.cd-price-box{background:var(--apple-light);border-radius:var(--radius);padding:.875rem 1rem;margin-bottom:1.5rem}
+.cd-price-label{font-size:11px;color:var(--apple-dark);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.375rem}
+.cd-price-val{font-size:18px;font-weight:500;color:var(--apple-dark)}
+.cd-section-title{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin:1.5rem 0 .75rem}
+.cd-outfit-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1.5rem}
+.cd-outfit-card{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--white)}
+.cd-outfit-img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.cd-outfit-placeholder{width:100%;aspect-ratio:3/4;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--ink-faint)}
+.cd-outfit-name{font-size:12px;font-weight:500;padding:7px 10px 4px;color:var(--ink)}
+.cd-outfit-size{font-size:11px;color:var(--ink-faint);padding:0 10px 9px;display:block}
+.cd-book-btn{width:100%;padding:15px;background:var(--apple);color:white;border:none;border-radius:var(--radius);font-size:15px;font-weight:500;cursor:pointer;font-family:var(--font);transition:opacity .15s}
+.cd-book-btn:hover{opacity:.88}
+
+/* 미디어 관리 */
+.admin-photo-list,.admin-outfit-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.admin-photo-item,.admin-outfit-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border-radius:var(--radius-sm);font-size:12px}
+.admin-photo-item img,.admin-outfit-item img{width:36px;height:36px;object-fit:cover;border-radius:5px;flex-shrink:0}
+.admin-photo-item .url,.admin-outfit-item .nm{flex:1;color:var(--ink-mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.admin-del-btn{background:none;border:none;cursor:pointer;color:#C0392B;font-size:16px;padding:2px 4px;flex-shrink:0}
+.add-url-row{display:flex;gap:6px;margin-top:4px}
+.add-url-row input{flex:1;font-size:12px;padding:7px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);font-family:var(--font);outline:none}
+.add-url-row button{padding:7px 12px;background:var(--apple);color:white;border:none;border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);cursor:pointer;white-space:nowrap}
+
+
+.cd-dots{display:flex;justify-content:center;gap:6px;padding:8px 0}
+.cd-dot{width:6px;height:6px;border-radius:50%;background:var(--line);border:none;padding:0;cursor:pointer;transition:background .2s,transform .2s}
+.cd-dot.active{background:var(--apple);transform:scale(1.3)}
+
+
+.admin-inner-nav{display:flex;border-bottom:1px solid var(--line);margin-bottom:1.25rem}
+.admin-inner-btn{flex:1;padding:11px 8px;background:none;border:none;font-family:var(--font);font-size:13px;color:var(--ink-faint);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+.admin-inner-btn.active{color:var(--ink);font-weight:500;border-bottom-color:var(--apple)}
+
+
+.admin-stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1.25rem}
+.admin-stat-card{background:var(--white);border:1.5px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.admin-stat-label{font-size:11px;color:var(--ink-faint);margin-bottom:6px;letter-spacing:.04em}
+.admin-stat-value{font-size:22px;font-weight:500;color:var(--ink)}
+.admin-stat-value.highlight{color:var(--apple-dark)}
+
+
+.concept-tab-img-wrap { position:relative; overflow:hidden; }
+.concept-tab-img-wrap::after { content:'자세히 보기 →'; position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,.45); color:white; font-size:10px; padding:4px 8px; border-radius:99px; pointer-events:none; letter-spacing:.03em; }
+
+
+.lang-switcher{display:flex;gap:3px;justify-content:center;padding:6px 0;background:var(--white);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:99}
+.lang-btn{border:1px solid var(--line);background:var(--white);font-family:var(--font);font-size:11px;font-weight:500;color:var(--ink-faint);padding:4px 10px;border-radius:99px;cursor:pointer;transition:background .15s,color .15s}
+.lang-btn.active{background:var(--apple);color:white}
+
+
+/* 내 예약 조회 */
+.my-booking-tab { display:none; padding:1.5rem 1.25rem 3rem; max-width:540px; margin:0 auto; }
+.my-booking-search { display:flex; gap:8px; margin-bottom:1.5rem; }
+.my-booking-search input { flex:1; padding:12px 14px; border:1.5px solid var(--line); border-radius:var(--radius); font-family:var(--font); font-size:14px; outline:none; }
+.my-booking-search input:focus { border-color:var(--apple); }
+.my-booking-search button { padding:12px 16px; background:var(--apple); color:white; border:none; border-radius:var(--radius); font-family:var(--font); font-size:14px; font-weight:500; cursor:pointer; white-space:nowrap; }
+.my-booking-card { background:var(--white); border:1.5px solid var(--line); border-radius:var(--radius); padding:1.25rem; margin-bottom:12px; }
+.my-booking-card.confirmed { border-color:var(--apple); }
+.my-booking-card.cancelled { opacity:.5; }
+.my-booking-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.my-booking-studio { font-size:12px; color:var(--ink-faint); }
+.my-booking-status { font-size:11px; font-weight:500; padding:3px 8px; border-radius:99px; }
+.my-booking-status.pending { background:#FEF3C7; color:#B45309; }
+.my-booking-status.confirmed { background:var(--apple-light); color:var(--apple-dark); }
+.my-booking-status.cancelled { background:#F3F4F6; color:var(--ink-faint); }
+.my-booking-concept { font-size:16px; font-weight:500; color:var(--ink); margin-bottom:6px; }
+.my-booking-info { font-size:13px; color:var(--ink-mid); line-height:1.7; }
+.my-booking-actions { display:flex; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
+.my-booking-btn { flex:1; padding:9px; border-radius:var(--radius-sm); font-family:var(--font); font-size:13px; font-weight:500; cursor:pointer; border:1.5px solid var(--line); background:var(--white); color:var(--ink-mid); }
+.my-booking-btn.cancel-req { border-color:#FCA5A5; color:#B91C1C; }
+.my-booking-btn.change-req { border-color:var(--apple); color:var(--apple-dark); }
+.my-booking-empty { text-align:center; padding:3rem 1rem; color:var(--ink-faint); }
+.my-booking-empty .empty-icon { font-size:40px; margin-bottom:.75rem; }
+
+
+.change-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:flex-end;justify-content:center}
+.change-modal-overlay.open{display:flex}
+.change-modal{background:var(--white);border-radius:20px 20px 0 0;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;padding:0 0 2rem}
+.change-modal-header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--white);z-index:1}
+.change-modal-title{font-size:15px;font-weight:500;color:var(--ink)}
+.change-modal-close{background:none;border:none;font-size:22px;color:var(--ink-faint);cursor:pointer;padding:2px 6px;line-height:1}
+.change-modal-body{padding:1.25rem}
+.change-step-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:.75rem}
+.change-time-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.25rem}
+.change-time-btn{padding:10px 6px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;background:var(--white);cursor:pointer;text-align:center;transition:all .15s}
+.change-time-btn.selected{background:var(--apple-light);border-color:var(--apple);color:var(--apple-dark);font-weight:500}
+.change-time-btn:disabled{opacity:.35;cursor:default}
+.change-confirm-btn{width:100%;padding:14px;background:var(--apple);color:white;border:none;border-radius:var(--radius);font-family:var(--font);font-size:15px;font-weight:500;cursor:pointer;margin-top:1rem}
+.change-confirm-btn:disabled{opacity:.4;cursor:default}
+
+body.brand-cat{--ba:var(--cat);--bl:var(--cat-light);--bm:var(--cat-mid);--bd:var(--cat)}
+@media(max-width:480px){.time-grid{grid-template-columns:repeat(auto-fill,minmax(68px,1fr))}.action-row{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('booking')" data-i18n="nav.booking">🍏 예약하기</button>
+  <button class="tab-btn" onclick="switchTab('concept')" data-i18n="nav.concept">🎬 컨셉 안내</button>
+  <button class="tab-btn" onclick="switchTab('mybooking')">📋 내 예약</button>
+  <button class="tab-btn admin-tab" id="admin-tab-btn" onclick="switchTab('admin')" style="display:none">🗂 관리자</button>
+</nav>
+<div class="lang-switcher" id="lang-switcher">
+  <button class="lang-btn active" data-lang="ko" onclick="setLang('ko')">KO</button>
+  <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+  <button class="lang-btn" data-lang="ja" onclick="setLang('ja')">JA</button>
+  <button class="lang-btn" data-lang="zh" onclick="setLang('zh')">中文</button>
+</div>
+<div class="loading-overlay" id="loading-overlay"><div class="spinner"></div><p style="font-size:14px;color:var(--ink-mid)">처리 중...</p></div>
+<div class="toast" id="toast"></div>
+
+<!-- BOOKING TAB -->
+<div id="booking-tab">
+<div class="page-header">
+  <div class="header-eyebrow">Sinchon · Hongdae · Concept Photo Studio</div>
+  <p class="header-formula" data-i18n="header.formula">f(🍏) = photo club</p>
+</div>
+<div id="main-wrap">
+  <div class="brand-wrap">
+    <p class="section-label" style="margin-bottom:.875rem" data-i18n="studio.select">스튜디오 선택</p>
+    <div class="brand-grid">
+      <div class="brand-card apple-card" onclick="selectBrand('apple')">
+        <div class="brand-dot"></div><div class="brand-icon">🍏</div>
+        <div class="brand-name" data-i18n="brand.apple.name">풋사과<br>포토클럽</div><span class="brand-type" data-i18n="brand.apple.type">개인화보</span>
+      </div>
+      <div class="brand-card cat-card" onclick="selectBrand('cat')">
+        <div class="brand-dot"></div><div class="brand-icon">😾</div>
+        <div class="brand-name" data-i18n="brand.cat.name">불만고양이<br>레코즈</div><span class="brand-type" data-i18n="brand.cat.type">셀프촬영</span>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+
+    <!-- 풋사과 폼 -->
+    <div class="form-block" id="apple-form">
+      <div class="divider"></div>
+      <div class="section">
+        <p class="section-label" data-i18n="label.concept">컨셉 선택</p>
+        <div class="concept-list">
+          <div class="concept-card" data-concept="good night bunny!" onclick="selectConcept(this)"><div class="concept-emoji">🐰</div><div class="concept-body"><div class="concept-name">good night bunny!</div><div class="concept-sub">굿나잇 버니</div></div><div class="concept-check"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="concept-card" data-concept="여름 한 조각" onclick="selectConcept(this)"><div class="concept-emoji">🌊</div><div class="concept-body"><div class="concept-name">여름 한 조각</div><div class="concept-sub">A Slice of Summer</div></div><div class="concept-check"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="concept-card" data-concept="체리베리 벌쓰데이" onclick="selectConcept(this)"><div class="concept-emoji">🍒</div><div class="concept-body"><div class="concept-name">체리베리 벌쓰데이</div><div class="concept-sub">Cherry Berry Birthday</div></div><div class="concept-check"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="concept-card" data-concept="마린걸" onclick="selectConcept(this)"><div class="concept-emoji">⚓</div><div class="concept-body"><div class="concept-name">마린걸</div><div class="concept-sub">Marine Girl</div></div><div class="concept-check"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="concept-card" data-concept="오늘도 최애가 되고싶어" onclick="selectConcept(this)"><div class="concept-emoji">⭐</div><div class="concept-body"><div class="concept-name">오늘도 최애가 되고싶어</div><div class="concept-sub">Wanna Be Your Fave</div></div><div class="concept-check"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+        </div>
+      </div>
+      <div class="section" id="cut-section" style="display:none">
+        <p class="section-label" data-i18n="label.cut">개인화보 컷 수</p>
+        <div id="promo-banner" style="display:none;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#B91C1C">
+          🎉 7/13 ~ 7/19 촬영 시 1컷 50% 할인 (35,000원)
+        </div>
+        <div class="cut-row">
+          <button class="cut-btn" onclick="selectCut(this,'1컷',70000)"><div class="cut-name" data-i18n="cut.1">1컷</div><div class="cut-desc" data-i18n="cut.1.price">70,000원</div></button>
+          <button class="cut-btn" onclick="selectCut(this,'4컷',120000)"><div class="cut-name" data-i18n="cut.4">4컷</div><div class="cut-desc" data-i18n="cut.4.price">120,000원</div></button>
+        </div>
+        <p class="cut-hint" id="cut-hint-text"></p>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <p class="section-label" data-i18n="label.date">날짜 선택</p>
+        <div class="cal-wrap">
+          <div class="cal-header"><button class="cal-nav" onclick="changeMonth(-1)">&#8249;</button><span class="cal-month" id="cal-month-label"></span><button class="cal-nav" onclick="changeMonth(1)">&#8250;</button></div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <p class="section-label" data-i18n="label.time">시간 선택</p>
+        <div class="time-grid" id="time-grid"></div>
+        <p class="time-hint" id="time-hint" data-i18n="hint.selectDateFirst">날짜를 먼저 선택해 주세요.</p>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <p class="section-label" data-i18n="label.contact">연락처</p>
+        <div class="form-group"><label class="form-label" data-i18n="label.name">이름</label><input type="text" id="f-name" placeholder="홍길동" data-i18n-placeholder="placeholder.name"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label.phone">연락처</label><input type="tel" id="f-phone" placeholder="010-0000-0000"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label.email"><span data-i18n="label.emailSub" style="color:var(--ink-faint);font-size:11px"></span></label><input type="text" id="f-email" placeholder="example@email.com"><p style="font-size:11px;color:var(--ink-faint);margin-top:5px" data-i18n="hint.emailConfirm">예약금 입금 안내는 입력하신 전화번호로 문자 안내드립니다.</p></div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <p class="section-label" data-i18n="label.summary">예약 요약</p>
+        <div class="summary-box">
+          <p class="summary-empty" id="apple-summary-empty" data-i18n="hint.summaryEmpty">컨셉과 날짜를 선택하면 요약이 나타나요.</p>
+          <div id="apple-summary-rows" style="display:none">
+            <div class="summary-header" data-i18n="summary.header.apple">🍏 풋사과 포토클럽 · 예약 내용</div>
+            <div class="summary-row"><span class="summary-key" data-i18n="label.concept2">컨셉</span><span class="summary-val" id="s-concept">—</span></div>
+            <div class="summary-row" id="s-cut-row" style="display:none"><span class="summary-key" data-i18n="label.cut2">컷 수</span><span class="summary-val" id="s-cut">—</span></div>
+            <div class="summary-row"><span class="summary-key" data-i18n="label.date2">날짜</span><span class="summary-val" id="s-date">—</span></div>
+            <div class="summary-row"><span class="summary-key" data-i18n="label.time2">시간</span><span class="summary-val" id="s-time">—</span></div>
+            <div class="summary-row summary-total"><span class="summary-key" data-i18n="label.total">합계</span><span class="summary-val" id="s-total">—</span></div>
+            <div class="summary-row" id="s-deposit-row" style="display:none;background:#FFFBEB">
+              <span class="summary-key" style="color:#B45309;font-size:12px">예약금</span>
+              <span class="summary-val" style="color:#B45309;font-size:13px" id="s-deposit">—</span>
+            </div>
+            <div class="summary-row" id="s-remain-row" style="display:none">
+              <span class="summary-key" style="color:var(--ink-faint);font-size:12px">당일 결제</span>
+              <span class="summary-val" style="color:var(--ink-faint);font-size:12px" id="s-remain">—</span>
+            </div>
+          </div>
+        </div>
+        <button class="submit-btn" onclick="submitBooking('apple')"><svg width="17" height="17" viewBox="0 0 24 24" fill="white"><path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg><span data-i18n="btn.submit">예약 신청하기</span></button>
+        <p class="kakao-hint" data-i18n="hint.kakao">접수 후 예약금 확인 후 이메일 확정 안내 · 운영시간 11:00–20:00</p>
+      </div>
+    </div>
+
+    <!-- 불만고양이 폼 -->
+    <div class="form-block" id="cat-form">
+      <div class="divider"></div>
+      <div class="section">
+        <p class="section-label" data-i18n="label.concept">촬영 컨셉 선택</p>
+        <div class="concept-list">
+          <div class="concept-card" data-concept="비닐레코드 세션" data-price="35000" onclick="selectConcept(this)"><div class="concept-emoji">🎵</div><div class="concept-body"><div class="concept-name">비닐레코드 세션</div><div class="concept-sub">레트로 레코드샵 분위기</div></div><div class="concept-check"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="concept-card" data-concept="밤의 스튜디오" data-price="35000" onclick="selectConcept(this)"><div class="concept-emoji">🌙</div><div class="concept-body"><div class="concept-name">밤의 스튜디오</div><div class="concept-sub">야간 감성, 네온 무드</div></div><div class="concept-check"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="concept-card" data-concept="얼터너티브" data-price="35000" onclick="selectConcept(this)"><div class="concept-emoji">🎸</div><div class="concept-body"><div class="concept-name">얼터너티브</div><div class="concept-sub">밴드·인디 무드</div></div><div class="concept-check"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <p class="section-label" data-i18n="label.date">날짜 선택</p>
+        <div class="cal-wrap">
+          <div class="cal-header"><button class="cal-nav" onclick="changeMonth(-1)">&#8249;</button><span class="cal-month" id="cal-month-label-cat"></span><button class="cal-nav" onclick="changeMonth(1)">&#8250;</button></div>
+          <div class="cal-grid" id="cal-grid-cat"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <p class="section-label" data-i18n="label.time">시간 선택</p>
+        <div class="time-grid" id="time-grid-cat"></div>
+        <p class="time-hint" id="time-hint-cat" data-i18n="hint.selectDateFirst">날짜를 먼저 선택해 주세요.</p>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <p class="section-label" data-i18n="label.contact">연락처</p>
+        <div class="form-group"><label class="form-label" data-i18n="label.name">이름</label><input type="text" id="fc-name" placeholder="홍길동" data-i18n-placeholder="placeholder.name"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label.phone">연락처</label><input type="tel" id="fc-phone" placeholder="010-0000-0000"></div>
+        <div class="form-group"><label class="form-label" data-i18n="label.email"><span data-i18n="label.emailSub" style="color:var(--ink-faint);font-size:11px"></span></label><input type="text" id="fc-email" placeholder="example@email.com"><p style="font-size:11px;color:var(--ink-faint);margin-top:5px" data-i18n="hint.emailConfirm">예약금 입금 안내는 입력하신 전화번호로 문자 안내드립니다.</p></div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <p class="section-label" data-i18n="label.summary">예약 요약</p>
+        <div class="summary-box">
+          <p class="summary-empty" id="cat-summary-empty" data-i18n="hint.summaryEmpty">컨셉과 날짜를 선택하면 요약이 나타나요.</p>
+          <div id="cat-summary-rows" style="display:none">
+            <div class="summary-header" data-i18n="summary.header.cat">😾 불만고양이레코즈 · 예약 내용</div>
+            <div class="summary-row"><span class="summary-key" data-i18n="label.concept2">컨셉</span><span class="summary-val" id="cs-concept">—</span></div>
+            <div class="summary-row"><span class="summary-key" data-i18n="label.date2">날짜</span><span class="summary-val" id="cs-date">—</span></div>
+            <div class="summary-row"><span class="summary-key" data-i18n="label.time2">시간</span><span class="summary-val" id="cs-time">—</span></div>
+            <div class="summary-row summary-total"><span class="summary-key" data-i18n="label.total">합계</span><span class="summary-val" id="cs-total">—</span></div>
+            <div class="summary-row" id="cs-deposit-row" style="display:none;background:#FFFBEB">
+              <span class="summary-key" style="color:#B45309;font-size:12px">예약금</span>
+              <span class="summary-val" style="color:#B45309;font-size:13px" id="cs-deposit">—</span>
+            </div>
+            <div class="summary-row" id="cs-remain-row" style="display:none">
+              <span class="summary-key" style="color:var(--ink-faint);font-size:12px">당일 결제</span>
+              <span class="summary-val" style="color:var(--ink-faint);font-size:12px" id="cs-remain">—</span>
+            </div>
+          </div>
+        </div>
+        <button class="submit-btn" onclick="submitBooking('cat')"><svg width="17" height="17" viewBox="0 0 24 24" fill="white"><path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg><span data-i18n="btn.submit">예약 신청하기</span></button>
+        <p class="kakao-hint" data-i18n="hint.kakao">접수 후 예약금 확인 후 이메일 확정 안내 · 운영시간 11:00–20:00</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="success-screen" id="success-screen">
+  <div class="success-icon" id="success-icon">🍏</div>
+  <h2 class="success-title" data-i18n="success.title">예약 접수 완료!</h2>
+  <p class="success-sub" data-i18n="success.sub">신청이 완료되었어요! 예약금 입금 후 확정 안내를 드릴게요 🌿</p>
+  <div id="success-deposit" style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:1.25rem;max-width:420px;margin:0 auto 1.5rem;text-align:left">
+    <p style="font-size:14px;font-weight:500;margin:0 0 10px" data-i18n="deposit.title">💰 예약금 안내</p>
+    <p style="font-size:15px;font-weight:600;color:#B45309;margin:0 0 6px" id="success-deposit-amount" data-i18n="deposit.amount">예약금 30,000원</p>
+    <p style="font-size:13px;color:#5A5A55;line-height:1.7;margin:0" data-i18n="deposit.desc">입금해 주시면 예약이 확정돼요!<br>예약금 입금 안내는 입력해 주신 전화번호로 문자로 안내드립니다.</p>
+    <div id="paypal-notice" data-i18n-intl-only="true" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid #FDE68A">
+      <p style="font-size:12px;font-weight:500;color:#1D4ED8;margin:0 0 6px" data-i18n="paypal.title">💳 PayPal Payment Available</p>
+      <p style="font-size:12px;color:#78716C;line-height:1.7;margin:0" data-i18n="paypal.desc">If bank transfer is not available, you may pay the deposit via PayPal (additional fees apply). Please email fx.greenapple26@gmail.com to request PayPal payment.</p>
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid #FDE68A">
+      <p style="font-size:12px;font-weight:500;color:#92400E;margin:0 0 6px" data-i18n="cancel.title">📋 취소 및 날짜 변경 안내</p>
+      <p style="font-size:12px;color:#78716C;line-height:1.7;margin:0" data-i18n="cancel.desc">· 촬영 3일 전까지 취소 및 날짜 변경 가능, 예약금 환불됩니다.<br>· 촬영 2일 전부터 취소 및 날짜 변경 불가, 예약금 환불 불가합니다.</p>
+    </div>
+  </div>
+  <div class="success-card" id="success-card"></div>
+  <a href="http://pf.kakao.com/_BLxmZK/chat" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-faint);text-decoration:none;margin-top:.5rem"><svg width="16" height="16" viewBox="0 0 24 24" fill="#9A9A92"><path d="M12 2C6.48 2 2 5.84 2 10.6c0 3.05 1.8 5.73 4.5 7.34L5.5 21l3.9-2.1c.84.2 1.72.3 2.6.3 5.52 0 10-3.84 10-8.6S17.52 2 12 2z"/></svg><span data-i18n="kakao.inquiry">카카오 채널 문의하기</span></a>
+  <p class="booking-id" id="booking-id"></p>
+  <br>
+  <button onclick="resetBooking()" style="margin-top:.5rem;background:none;border:1.5px solid var(--line);border-radius:var(--radius);padding:11px 28px;font-size:14px;color:var(--ink-mid);cursor:pointer;font-family:var(--font)" data-i18n="btn.backHome">← 처음으로 돌아가기</button>
+</div>
+</div>
+
+
+<!-- CONCEPT TAB -->
+
+<!-- 내 예약 조회 탭 -->
+<div id="mybooking-tab" style="display:none;padding-bottom:3rem">
+  <div class="page-header">
+    <div class="header-eyebrow">My Booking</div>
+    <p class="header-title" style="font-size:16px;font-weight:500;color:var(--ink)">내 예약 조회</p>
+  </div>
+  <div style="max-width:540px;margin:0 auto;padding:1.5rem 1.25rem 3rem">
+    <p style="font-size:13px;color:var(--ink-mid);margin-bottom:1rem">예약 시 입력한 이름과 전화번호로 조회하세요.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem">
+      <input type="text" id="my-booking-name" placeholder="이름" style="padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--radius);font-family:var(--font);font-size:14px;outline:none" onkeydown="if(event.key==='Enter') searchMyBooking()">
+      <div class="my-booking-search" style="margin-bottom:0">
+        <input type="tel" id="my-booking-phone" placeholder="010-0000-0000" onkeydown="if(event.key==='Enter') searchMyBooking()">
+        <button onclick="searchMyBooking()">조회</button>
+      </div>
+    </div>
+    <div id="my-booking-result"></div>
+  </div>
+</div>
+
+<div id="concept-tab" style="display:none;padding-bottom:3rem">
+  <div class="page-header">
+    <div class="header-eyebrow">Greenapple Photo Club</div>
+    <p class="header-title">컨셉 안내</p>
+  </div>
+  <div id="concept-tab-content"></div>
+</div>
+
+<!-- ADMIN TAB -->
+<div id="admin-tab">
+  <div id="admin-login-screen" class="admin-container">
+    <div class="admin-login">
+      <div style="font-size:32px;margin-bottom:1rem">🗂</div>
+      <p class="admin-login-title">관리자 로그인</p>
+      <p class="admin-login-sub">예약 관리 페이지는 관리자만 접근할 수 있어요.</p>
+      <div class="form-group"><label class="form-label">비밀번호</label><input type="password" id="admin-pw" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')adminLogin()"></div>
+      <button class="submit-btn" style="margin-top:.75rem" onclick="adminLogin()">로그인</button>
+    </div>
+  </div>
+  <div id="admin-main-screen" style="display:none">
+    <div class="admin-container">
+      <!-- 내부 탭 -->
+      <div class="admin-inner-nav">
+        <button class="admin-inner-btn active" id="aib-booking" onclick="switchAdminInner('booking')">📅 예약 관리</button>
+        <button class="admin-inner-btn" id="aib-concept" onclick="switchAdminInner('concept')">🎬 컨셉 관리</button>
+        <button onclick="adminLogout()" style="background:none;border:none;font-size:12px;color:var(--ink-faint);cursor:pointer;font-family:var(--font);padding:0 8px">로그아웃</button>
+      </div>
+
+      <!-- 예약 관리 패널 -->
+      <div id="admin-panel-booking">
+        <div class="section">
+          <!-- 통계 카드 -->
+          <div class="admin-stats-grid" id="admin-stats-grid">
+            <div class="admin-stat-card">
+              <div class="admin-stat-label">이번달 예약</div>
+              <div class="admin-stat-value" id="stat-month">-</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="admin-stat-label">이번주 예약</div>
+              <div class="admin-stat-value" id="stat-week">-</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="admin-stat-label">오늘 예약</div>
+              <div class="admin-stat-value" id="stat-today">-</div>
+            </div>
+            <div class="admin-stat-card">
+              <div class="admin-stat-label">이번달 예상매출</div>
+              <div class="admin-stat-value highlight" id="stat-revenue">-</div>
+            </div>
+          </div>
+          <div class="admin-cal-wrap">
+            <div class="cal-header"><button class="cal-nav" onclick="adminChangeMonth(-1)">&#8249;</button><span class="cal-month" id="admin-cal-month"></span><button class="cal-nav" onclick="adminChangeMonth(1)">&#8250;</button></div>
+            <button id="admin-month-open-btn" onclick="toggleAdminMonthOpen()" style="width:100%;padding:10px;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:1rem;transition:all .15s"></button>
+            <div class="cal-grid" id="admin-cal-grid"></div>
+          </div>
+        </div>
+        <div id="admin-list-section" style="display:none">
+          <div class="booking-list-header"><span class="booking-list-date" id="admin-list-date"></span><span class="booking-count" id="admin-booking-count"></span></div>
+          <div class="admin-loading" id="admin-loading" style="display:none">불러오는 중...</div>
+          <div id="admin-booking-list"></div>
+        </div>
+        <div id="admin-time-manager" style="display:none">
+          <div class="time-manager">
+            <div class="time-manager-title" onclick="toggleTimeManager()" style="cursor:pointer">
+              <span>타임 직접 관리 <span id="admin-manage-date-label" style="color:var(--ink-faint);font-weight:400"></span></span>
+              <span id="time-manager-toggle" style="font-size:16px;color:var(--ink-faint);transition:transform .2s">&#8964;</span>
+            </div>
+            <div id="time-manager-body" style="display:none">
+            <p style="font-size:11px;color:var(--ink-faint);margin-bottom:.75rem">빨간 타임 클릭 → 차단 해제</p>
+            <div class="time-manager-grid" id="admin-time-manager-grid"></div>
+            <div class="legend">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--apple-light);border:1px solid var(--apple)"></div>예약 확정됨</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#FEE;border:1px solid #E8A0A0"></div>수동 차단</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--white);border:1px solid var(--line)"></div>예약 가능</div>
+            </div>
+            </div><!-- /time-manager-body -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 컨셉 관리 패널 -->
+      <div id="admin-panel-concept" style="display:none">
+        <div class="section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.875rem">
+            <p class="section-label" style="margin-bottom:0">컨셉 관리</p>
+            <button onclick="toggleAddConceptForm()" style="background:var(--apple);color:white;border:none;border-radius:var(--radius-sm);padding:7px 14px;font-size:12px;font-family:var(--font);cursor:pointer">+ 컨셉 추가</button>
+          </div>
+          <div id="add-concept-form" style="display:none" class="add-concept-form">
+            <input type="text" id="new-concept-studio" placeholder="스튜디오 (풋사과 포토클럽 / 불만고양이레코즈)">
+            <input type="text" id="new-concept-emoji" placeholder="이모지 (예: 🌸)">
+            <input type="text" id="new-concept-name" placeholder="컨셉명">
+            <input type="text" id="new-concept-sub" placeholder="영문명 또는 부제 (선택)">
+            <textarea id="new-concept-desc" placeholder="컨셉 설명"></textarea>
+            <input type="text" id="new-concept-price" placeholder="가격 (예: 70,000원)">
+            <input type="text" id="new-concept-img" placeholder="이미지 URL (선택)">
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <button onclick="saveNewConcept()" style="flex:1;padding:10px;background:var(--apple);color:white;border:none;border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;cursor:pointer;font-weight:500">저장</button>
+              <button onclick="toggleAddConceptForm()" style="padding:10px 16px;background:none;border:1.5px solid var(--line);border-radius:var(--radius-sm);font-family:var(--font);font-size:13px;cursor:pointer;color:var(--ink-mid)">취소</button>
+            </div>
+          </div>
+          <div id="admin-concept-list-apple" style="margin-bottom:1rem">
+            <p style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px">🍏 풋사과 포토클럽</p>
+            <div id="admin-concept-cards-apple"></div>
+          </div>
+          <div id="admin-concept-list-cat">
+            <p style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px">😾 불만고양이레코즈</p>
+            <div id="admin-concept-cards-cat"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 컨셉 상세 페이지 -->
+<div id="concept-detail-page" style="display:none;pointer-events:none">
+  <div class="cd-back">
+    <button onclick="closeConceptDetail()">&#8592;</button>
+    <span id="cd-back-label">컨셉 안내</span>
+  </div>
+  <div class="cd-gallery-wrap" id="cd-gallery-wrap"></div>
+  <div class="cd-dots" id="cd-dots"></div>
+  <div class="cd-body">
+    <p class="cd-studio" id="cd-studio"></p>
+    <h2 class="cd-name" id="cd-name"></h2>
+    <p class="cd-sub" id="cd-sub"></p>
+    <p class="cd-desc" id="cd-desc"></p>
+    <div class="cd-price-box">
+      <p class="cd-price-label">촬영 금액</p>
+      <p class="cd-price-val" id="cd-price"></p>
+    </div>
+    <div id="cd-outfits-wrap" style="display:none">
+      <p class="cd-section-title">대여 가능 의상</p>
+      <div class="cd-outfit-grid" id="cd-outfit-grid"></div>
+    </div>
+    <button class="cd-book-btn" onclick="bookFromDetail()">이 컨셉으로 예약하기</button>
+  </div>
+</div>
+
+<!-- 미디어 관리 모달 -->
+<div class="modal-backdrop" id="media-mgr-backdrop" style="pointer-events:none" onclick="closeMmgr(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="media-mgr-title">사진 / 의상 관리</span>
+      <button class="modal-close" onclick="closeMmgr()">x</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-section-label">대표 이미지 URL</p>
+      <input type="text" id="mmgr-main-img" placeholder="https://..." style="width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);font-family:var(--font);outline:none;margin-bottom:4px">
+      <p class="modal-section-label" style="margin-top:14px">갤러리 사진</p>
+      <div class="admin-photo-list" id="mmgr-photo-list"></div>
+      <div class="add-url-row">
+        <input type="text" id="mmgr-new-photo" placeholder="이미지 URL">
+        <button onclick="mmgrAddPhoto()">추가</button>
+      </div>
+      <p class="modal-section-label" style="margin-top:14px">대여 의상</p>
+      <div class="admin-outfit-list" id="mmgr-outfit-list"></div>
+      <div class="add-url-row" style="flex-wrap:wrap">
+        <input type="text" id="mmgr-outfit-name" placeholder="의상 이름" style="flex:1;min-width:80px">
+        <input type="text" id="mmgr-outfit-size" placeholder="사이즈 (예: FREE/S/M)" style="flex:1;min-width:80px">
+        <input type="text" id="mmgr-outfit-img" placeholder="사진 URL (선택)" style="flex:2;min-width:120px">
+        <button onclick="mmgrAddOutfit()">추가</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="action-btn" onclick="closeMmgr()" style="border-color:var(--line);color:var(--ink-mid)">취소</button>
+      <button class="action-btn confirm" onclick="saveMmgr()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-backdrop" id="edit-modal-backdrop" onclick="closeEditModal(event)">
+  <div class="modal" id="edit-modal">
+    <div class="modal-header"><span class="modal-title">예약 수정</span><button class="modal-close" onclick="closeEditModal()">×</button></div>
+    <div class="modal-body">
+      <p class="modal-section-label">컨셉</p>
+      <div class="modal-concept-list" id="modal-concept-list"></div>
+      <div id="modal-cut-wrap">
+        <p class="modal-section-label">컷 수</p>
+        <div class="modal-cut-row">
+          <button class="modal-cut-btn" id="mcut-1" onclick="modalSelectCut('1컷',70000,this)"><div class="nm">1컷</div><div class="pr">70,000원</div></button>
+          <button class="modal-cut-btn" id="mcut-4" onclick="modalSelectCut('4컷',120000,this)"><div class="nm">4컷</div><div class="pr">120,000원</div></button>
+        </div>
+      </div>
+      <p class="modal-section-label">날짜</p>
+      <input type="date" id="modal-date" style="width:100%;font-size:14px;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--radius-sm);background:var(--white);color:var(--ink);font-family:var(--font);outline:none" oninput="modalDateChange()">
+      <p class="modal-section-label">시간</p>
+      <div class="modal-time-grid" id="modal-time-grid"><p style="font-size:12px;color:var(--ink-faint);grid-column:1/-1">날짜를 먼저 선택해 주세요.</p></div>
+      <p class="modal-section-label">이름</p><input type="text" id="modal-name" placeholder="홍길동">
+      <p class="modal-section-label">연락처</p><input type="tel" id="modal-phone" placeholder="010-0000-0000">
+      <p class="modal-section-label">이메일 <span style="color:var(--ink-faint);font-size:11px;text-transform:none;letter-spacing:0">(선택)</span></p><input type="text" id="modal-email" placeholder="example@email.com">
+      <p class="modal-section-label">인스타그램 <span style="color:var(--ink-faint);font-size:11px;text-transform:none;letter-spacing:0">(선택)</span></p><input type="text" id="modal-insta" placeholder="@username">
+      <p class="modal-section-label">요청사항 <span style="color:var(--ink-faint);font-size:11px;text-transform:none;letter-spacing:0">(선택)</span></p><textarea id="modal-memo" style="min-height:64px" placeholder="특별 요청 등..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="action-btn" onclick="closeEditModal()" style="border-color:var(--line);color:var(--ink-mid)">취소</button>
+      <button class="action-btn confirm" onclick="saveEdit()">저장하기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- 알림 설정 ----
+var EMAILJS_PUBLIC_KEY   = 'KkshEUeknEEo4VNdi';
+var EMAILJS_SERVICE_ID   = 'service_msl9428';
+var EMAILJS_TEMPLATE_CUSTOMER = 'template_2dy4s8o';
+var EMAILJS_TEMPLATE_ADMIN    = 'template_fytb84x';
+var EMAILJS_TEMPLATE_CANCEL   = 'template_8g5whtw';
+var EMAILJS_TEMPLATE_CHANGE   = 'template_uafrq3q';
+var ADMIN_EMAIL = 'fx.greenapple26@gmail.com';
+var SOLAPI_ENABLED = false;
+var FUNCTIONS_SMS_URL = '';
+
+window.addEventListener('load', function() {
+  try { emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY }); console.log('EmailJS init OK'); } catch(e) { console.warn('EmailJS init 실패:', e); }
+});
+
+// ---- Firebase 설정 ----
+var firebaseConfig = {
+  apiKey: "AIzaSyBjhZVVpqFTEr1x2aY5KZtajAwZvrtp16w",
+  authDomain: "fx-greenapple-booking.firebaseapp.com",
+  projectId: "fx-greenapple-booking",
+  storageBucket: "fx-greenapple-booking.firebasestorage.app",
+  messagingSenderId: "361223884600",
+  appId: "1:361223884600:web:eea47b5b976dbd77f77bcd"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+
+// ---- 로컬 캐시 ----
+var __localDB = [];
+var __blockedListeners = [];
+
+window.__saveBooking = function(data) {
+  var id = 'bk-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+  var b = Object.assign({}, data, { id: id, status: 'pending', createdAt: new Date().toISOString() });
+  __localDB.push(b);
+  db.collection('bookings').doc(id).set(b)
+    .then(function(){ console.log('Firebase 저장 완료:', id); })
+    .catch(function(e){ console.warn('Firebase 저장 실패:', e); });
+  return Promise.resolve(id);
+};
+
+window.__updateBookingStatus = function(id, status) {
+  var b = __localDB.find(function(x){ return x.id === id; });
+  if (b) {
+    b.status = status;
+    var bl = buildBlockedSlots();
+    __blockedListeners.forEach(function(cb){ cb(bl); });
+    db.collection('bookings').doc(id).update({ status: status })
+      .catch(function(e){ console.warn('Firebase 업데이트 실패:', e); });
+  }
+  return Promise.resolve();
+};
+
+window.__getBookingsByDate = function(dateStr) {
+  return db.collection('bookings').where('date', '==', dateStr).get()
+    .then(function(snap) {
+      var list = [];
+      snap.forEach(function(doc) {
+        var d = doc.data();
+        var exists = __localDB.find(function(b){ return b.id === doc.id; });
+        if (!exists) __localDB.push(d); else Object.assign(exists, d);
+        list.push(d);
+      });
+      return list.sort(function(a,b){ return a.time > b.time ? 1 : -1; });
+    })
+    .catch(function(e) {
+      console.warn('Firebase 조회 실패, 로컬 사용:', e);
+      return __localDB.filter(function(b){ return b.date === dateStr; })
+        .sort(function(a,b){ return a.time > b.time ? 1 : -1; });
+    });
+};
+
+window.__subscribeBlockedSlots = function(cb) {
+  __blockedListeners.push(cb);
+  db.collection('bookings').where('status', '==', 'confirmed')
+    .onSnapshot(function(snap) {
+      snap.forEach(function(doc) {
+        var d = doc.data();
+        var exists = __localDB.find(function(b){ return b.id === doc.id; });
+        if (!exists) __localDB.push(d); else Object.assign(exists, d);
+      });
+      cb(buildBlockedSlots());
+    }, function(e) {
+      console.warn('Firebase 구독 실패:', e);
+      cb(buildBlockedSlots());
+    });
+  return function(){};
+};
+function buildBlockedSlots() {
+  var bl = {};
+  // 확정 예약 (브랜드 무관 - 같은 공간이므로)
+  __localDB.forEach(function(b) {
+    if (b.status !== 'confirmed') return;
+    if (!bl[b.date]) bl[b.date] = [];
+    if (b.time) bl[b.date].push(b.time);
+    if (b.timeEnd) bl[b.date].push(b.timeEnd);
+  });
+  // 수동 차단 타임 추가
+  Object.keys(manualBlocked).forEach(function(date) {
+    if (!bl[date]) bl[date] = [];
+    manualBlocked[date].forEach(function(t) {
+      if (bl[date].indexOf(t) < 0) bl[date].push(t);
+    });
+  });
+  return bl;
+}
+
+// ---- STATE ----
+var S = { brand:null, concept:null, cut:null, cutPrice:0, date:null, time:null, timeEnd:null, catConcept:null, catConceptPrice:0, catDate:null, catTime:null, year:2026, month:7 };
+var blockedSlots = {};
+var manualBlocked = {}; // 관리자 수동 차단 타임
+var holidayDates = {}; // 휴무일 {'2026-07-10': true}
+var openMonths = {}; // 오픈된 월 {'2026-07': true} - 없으면 마감 상태
+var TIMES = ['11:00','11:45','12:30','13:15','14:00','14:45','15:30','16:15','17:00','17:45','18:30','19:15','20:00'];
+var MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+var adminAuth = false;
+var ADMIN_PW = 'greenapple';
+var adminYear = 2026, adminMonth = 7, adminSelectedDate = null;
+var allBookingDates = {};
+var editTarget = null;
+var CONCEPTS_APPLE = [{emoji:'🐰',name:'good night bunny!'},{emoji:'🌊',name:'여름 한 조각'},{emoji:'🍒',name:'체리베리 벌쓰데이'},{emoji:'⚓',name:'마린걸'},{emoji:'⭐',name:'오늘도 최애가 되고싶어'}];
+var CONCEPTS_CAT = [{emoji:'🎵',name:'비닐레코드 세션'},{emoji:'🌙',name:'밤의 스튜디오'},{emoji:'🎸',name:'얼터너티브'}];
+
+// ---- TAB ----
+function switchTab(tab) {
+  var allTabs = ['booking','concept','mybooking','admin'];
+  document.querySelectorAll('.tab-btn').forEach(function(b,i){ b.classList.toggle('active', allTabs[i]===tab); });
+  document.getElementById('booking-tab').style.display   = (tab==='booking')   ? 'block' : 'none';
+  document.getElementById('concept-tab').style.display   = (tab==='concept')   ? 'block' : 'none';
+  document.getElementById('mybooking-tab').style.display = (tab==='mybooking') ? 'block' : 'none';
+  document.getElementById('admin-tab').style.display     = (tab==='admin')     ? 'block' : 'none';
+  if (tab==='concept') renderConceptTab();
+  if (tab==='admin' && adminAuth) { loadAdminCalendar(); renderAdminConceptList(); }
+}
+
+// ---- BRAND ----
+function selectBrand(brand) {
+  S.brand=brand; S.concept=null; S.cut=null; S.cutPrice=0; S.date=null; S.time=null; S.timeEnd=null;
+  S.catConcept=null; S.catConceptPrice=0; S.catDate=null; S.catTime=null;
+  document.querySelectorAll('.concept-card').forEach(function(c){ c.classList.remove('selected'); });
+  document.querySelectorAll('.cut-btn').forEach(function(b){ b.classList.remove('selected'); });
+  document.getElementById('cut-section').style.display='none';
+  document.querySelectorAll('.brand-card').forEach(function(c){ c.classList.remove('selected'); });
+  document.querySelector('.'+brand+'-card').classList.add('selected');
+  var af=document.getElementById('apple-form'), cf=document.getElementById('cat-form');
+  if (brand==='apple') {
+    document.body.classList.remove('brand-cat');
+    af.classList.add('visible'); cf.classList.remove('visible');
+    updateAppleSummary(); renderCalendar('apple'); renderTimes('apple');
+  } else {
+    document.body.classList.add('brand-cat');
+    cf.classList.add('visible'); af.classList.remove('visible');
+    updateCatSummary(); renderCalendar('cat'); renderTimes('cat');
+  }
+  setTimeout(function(){ (brand==='apple'?af:cf).scrollIntoView({behavior:'smooth',block:'start'}); }, 80);
+}
+
+
+// ---- 프로모션 할인 ----
+var PROMO_START = '2026-07-13';
+var PROMO_END = '2026-07-19';
+var PROMO_DISCOUNT = 0.5; // 50% 할인
+function isPromoDate(dateStr) {
+  return dateStr && dateStr >= PROMO_START && dateStr <= PROMO_END;
+}
+function isPromoActive() {
+  var today = new Date();
+  var todayStr = today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+  return todayStr <= PROMO_END;
+}
+function isPromoActive() {
+  // 오늘 날짜가 할인 종료일을 지나지 않았으면 true
+  var today = new Date();
+  var todayStr = today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+  return todayStr <= PROMO_END;
+}
+function applyPromoPrice() {
+  // 1컷이고 날짜가 할인기간이면 가격 재계산
+  if (S.cut === '1컷' && S.date) {
+    var basePrice = 70000;
+    S.cutPrice = isPromoDate(S.date) ? Math.round(basePrice * PROMO_DISCOUNT) : basePrice;
+  } else if (S.cut === '1컷') {
+    S.cutPrice = 70000;
+  }
+}
+
+// ---- CONCEPT / CUT ----
+function selectConcept(el) {
+  el.closest('.form-block').querySelectorAll('.concept-card').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  if (S.brand==='apple') { S.concept=el.dataset.concept; document.getElementById('cut-section').style.display='block'; var pb=document.getElementById('promo-banner'); if(pb) pb.style.display=isPromoActive()?'block':'none'; updateAppleSummary(); }
+  else { S.catConcept=el.dataset.concept; S.catConceptPrice=parseInt(el.dataset.price||0); updateCatSummary(); }
+}
+function selectCut(el, cut, price) {
+  document.querySelectorAll('.cut-btn').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected'); S.cut=cut; S.cutPrice=price; S.time=null; S.timeEnd=null;
+  applyPromoPrice();
+  var hintEl = document.getElementById('cut-hint-text');
+  if (hintEl) {
+    if (cut === '1컷') hintEl.textContent = '1타임 (약 45분 소요돼요)';
+    else if (cut === '4컷') hintEl.textContent = '2타임 (약 1시간 30분 소요돼요)';
+    else hintEl.textContent = '';
+  }
+  if (S.date) renderTimes('apple'); updateAppleSummary();
+}
+
+// ---- CALENDAR ----
+function pad(n){ return String(n).padStart(2,'0'); }
+function changeMonth(dir) {
+  S.month+=dir; if(S.month>12){S.month=1;S.year++;} if(S.month<1){S.month=12;S.year--;}
+  if(S.brand==='apple') renderCalendar('apple'); else renderCalendar('cat');
+}
+function renderCalendar(brand) {
+  var lid=brand==='apple'?'cal-month-label':'cal-month-label-cat';
+  var gid=brand==='apple'?'cal-grid':'cal-grid-cat';
+  document.getElementById(lid).textContent=S.year+'년 '+MONTHS[S.month-1];
+  var grid=document.getElementById(gid); grid.innerHTML='';
+  ['일','월','화','수','목','금','토'].forEach(function(d){ var el=document.createElement('div');el.className='cal-dow';el.textContent=d;grid.appendChild(el); });
+  var first=new Date(S.year,S.month-1,1).getDay(), total=new Date(S.year,S.month,0).getDate(), today=new Date();
+  var tY=today.getFullYear(),tM=today.getMonth()+1,tD=today.getDate();
+  for(var i=0;i<first;i++){var e=document.createElement('button');e.className='cal-day empty';grid.appendChild(e);}
+  for(var d=1;d<=total;d++){
+    var btn=document.createElement('button');btn.className='cal-day';btn.textContent=d;
+    var ds=S.year+'-'+pad(S.month)+'-'+pad(d);
+    var isPast=(S.year<tY)||(S.year===tY&&S.month<tM)||(S.year===tY&&S.month===tM&&d<tD);
+    var monthKey = S.year+'-'+pad(S.month);
+    var monthClosed = !openMonths[monthKey];
+    if(isPast||holidayDates[ds]||monthClosed){btn.classList.add('disabled'); if(holidayDates[ds]) btn.title='휴무일'; else if(monthClosed) btn.title='예약 마감';}
+    else{
+      if(S.year===tY&&S.month===tM&&d===tD) btn.classList.add('today');
+      var cur=brand==='apple'?S.date:S.catDate; if(ds===cur) btn.classList.add('selected');
+      (function(dateStr,b,br){ b.onclick=function(){
+        grid.querySelectorAll('.cal-day').forEach(function(x){x.classList.remove('selected');}); b.classList.add('selected');
+        if(br==='apple'){S.date=dateStr;S.time=null;S.timeEnd=null;applyPromoPrice();} else{S.catDate=dateStr;S.catTime=null;}
+        renderTimes(br); if(br==='apple') updateAppleSummary(); else updateCatSummary();
+      };})(ds,btn,brand);
+    }
+    grid.appendChild(btn);
+  }
+}
+
+// ---- TIMES ----
+function renderTimes(brand) {
+  var gid=brand==='apple'?'time-grid':'time-grid-cat', hid=brand==='apple'?'time-hint':'time-hint-cat';
+  var grid=document.getElementById(gid), hint=document.getElementById(hid);
+  grid.innerHTML='';
+  var curDate=brand==='apple'?S.date:S.catDate;
+  if(!curDate){hint.style.display='block';return;} hint.style.display='none';
+  var booked=blockedSlots[curDate]||[], is4=brand==='apple'&&S.cut==='4컷';
+  TIMES.forEach(function(t,idx){
+    var btn=document.createElement('button'); btn.className='time-btn';
+    var isLast=idx===TIMES.length-1, nextT=TIMES[idx+1], nextBooked=nextT&&booked.indexOf(nextT)>=0;
+    var unavail4=is4&&(isLast||nextBooked);
+    if(booked.indexOf(t)>=0||unavail4){ btn.classList.add('booked'); btn.textContent=t; }
+    else{
+      var isSel=brand==='apple'?(t===S.time||t===S.timeEnd):(t===S.catTime); if(isSel) btn.classList.add('selected');
+      if(is4&&nextT){ btn.innerHTML='<span style="display:block;font-weight:500">'+t+'</span><span style="display:block;font-size:11px;opacity:.7">~'+nextT+'</span>'; }
+      else{ btn.textContent=t; }
+      (function(time,b,br,i4,nt){ b.onclick=function(){
+        grid.querySelectorAll('.time-btn').forEach(function(x){x.classList.remove('selected');}); b.classList.add('selected');
+        if(br==='apple'){ S.time=time; if(i4&&nt){S.timeEnd=nt; var nb=b.nextElementSibling; if(nb&&!nb.classList.contains('booked'))nb.classList.add('selected');} else S.timeEnd=null; updateAppleSummary(); }
+        else{ S.catTime=time; updateCatSummary(); }
+      };})(t,btn,brand,is4,nextT);
+    }
+    grid.appendChild(btn);
+  });
+}
+
+// ---- SUMMARY ----
+function updateAppleSummary(){
+  var empty=document.getElementById('apple-summary-empty'), rows=document.getElementById('apple-summary-rows');
+  if(!S.concept){empty.style.display='block';rows.style.display='none';return;}
+  empty.style.display='none'; rows.style.display='block';
+  document.getElementById('s-concept').textContent=S.concept;
+  var cr=document.getElementById('s-cut-row');
+  if(S.cut){
+    cr.style.display='flex';
+    var cutLabel = S.cut + ' · ' + S.cutPrice.toLocaleString() + '원';
+    if (S.cut === '1컷' && isPromoDate(S.date)) {
+      cutLabel = S.cut + ' · <span style="text-decoration:line-through;color:var(--ink-faint);font-size:11px">70,000원</span> <span style="color:#DC2626;font-weight:600">' + S.cutPrice.toLocaleString() + '원</span>';
+    }
+    document.getElementById('s-cut').innerHTML = cutLabel;
+  } else cr.style.display='none';
+  document.getElementById('s-date').textContent=S.date?S.date.replace(/-/g,'.'):'—';
+  document.getElementById('s-time').textContent=S.time?(S.timeEnd?S.time+' - '+S.timeEnd:S.time):'—';
+  document.getElementById('s-total').textContent=S.cutPrice>0?S.cutPrice.toLocaleString()+'원':'—';
+  if (S.cutPrice > 0) {
+    var deposit = S.studio === '불만고양이레코즈' ? 10000 : 30000;
+    var remain = S.cutPrice - deposit;
+    document.getElementById('s-deposit-row').style.display = 'flex';
+    document.getElementById('s-deposit').textContent = deposit.toLocaleString() + '원 (문자 안내)';
+    document.getElementById('s-remain-row').style.display = 'flex';
+    document.getElementById('s-remain').textContent = remain.toLocaleString() + '원';
+  } else {
+    document.getElementById('s-deposit-row').style.display = 'none';
+    document.getElementById('s-remain-row').style.display = 'none';
+  }
+}
+function updateCatSummary(){
+  var empty=document.getElementById('cat-summary-empty'), rows=document.getElementById('cat-summary-rows');
+  if(!S.catConcept){empty.style.display='block';rows.style.display='none';return;}
+  empty.style.display='none'; rows.style.display='block';
+  document.getElementById('cs-concept').textContent=S.catConcept;
+  document.getElementById('cs-date').textContent=S.catDate?S.catDate.replace(/-/g,'.'):'—';
+  document.getElementById('cs-time').textContent=S.catTime||'—';
+  document.getElementById('cs-total').textContent=S.catConceptPrice>0?S.catConceptPrice.toLocaleString()+'원':'—';
+  if (S.catConceptPrice > 0) {
+    var deposit = 10000;
+    var remain = S.catConceptPrice - deposit;
+    document.getElementById('cs-deposit-row').style.display = 'flex';
+    document.getElementById('cs-deposit').textContent = deposit.toLocaleString() + '원 (문자 안내)';
+    document.getElementById('cs-remain-row').style.display = 'flex';
+    document.getElementById('cs-remain').textContent = remain.toLocaleString() + '원';
+  } else {
+    document.getElementById('cs-deposit-row').style.display = 'none';
+    document.getElementById('cs-remain-row').style.display = 'none';
+  }
+}
+
+// ---- TOAST ----
+function showToast(msg){ var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2800); }
+
+// ---- SUBMIT ----
+function submitBooking(brand) {
+  if(brand==='apple'){
+    var name=document.getElementById('f-name').value.trim(), phone=document.getElementById('f-phone').value.trim();
+    var email=document.getElementById('f-email').value.trim();
+    if(!S.concept){showToast('컨셉을 선택해 주세요.');return;}
+    if(!S.cut){showToast('컷 수를 선택해 주세요.');return;}
+    if(!S.date){showToast('날짜를 선택해 주세요.');return;}
+    if(!S.time){showToast('시간을 선택해 주세요.');return;}
+    if(!name){showToast('이름을 입력해 주세요.');return;}
+    if(!phone){showToast('연락처를 입력해 주세요.');return;}
+    var td=S.timeEnd?S.time+' - '+S.timeEnd:S.time;
+    var data={studio:'풋사과 포토클럽',type:'개인화보',concept:S.concept,cut:S.cut,date:S.date,time:S.time,timeEnd:S.timeEnd||null,name:name,phone:phone,email:email||null,totalPrice:S.cutPrice};
+    var card='<div class="success-card-row"><span>스튜디오</span><span>풋사과 포토클럽</span></div><div class="success-card-row"><span>이름</span><span>'+name+'</span></div><div class="success-card-row"><span>컨셉</span><span>'+S.concept+'</span></div><div class="success-card-row"><span>컷 수</span><span>'+S.cut+'</span></div><div class="success-card-row"><span>날짜</span><span>'+S.date.replace(/-/g,'.')+' '+td+'</span></div><div class="success-card-row"><span>합계</span><span>'+S.cutPrice.toLocaleString()+'원</span></div>';
+    document.getElementById('success-icon').textContent='🍏'; doSubmit(data,card);
+  } else {
+    var name=document.getElementById('fc-name').value.trim(), phone=document.getElementById('fc-phone').value.trim();
+    var email=document.getElementById('fc-email').value.trim();
+    if(!S.catConcept){showToast('컨셉을 선택해 주세요.');return;}
+    if(!S.catDate){showToast('날짜를 선택해 주세요.');return;}
+    if(!S.catTime){showToast('시간을 선택해 주세요.');return;}
+    if(!name){showToast('이름을 입력해 주세요.');return;}
+    if(!phone){showToast('연락처를 입력해 주세요.');return;}
+    var data={studio:'불만고양이레코즈',type:'셀프촬영',concept:S.catConcept,date:S.catDate,time:S.catTime,name:name,phone:phone,email:email||null,totalPrice:S.catConceptPrice};
+    var card='<div class="success-card-row"><span>스튜디오</span><span>불만고양이레코즈</span></div><div class="success-card-row"><span>이름</span><span>'+name+'</span></div><div class="success-card-row"><span>컨셉</span><span>'+S.catConcept+'</span></div><div class="success-card-row"><span>날짜</span><span>'+S.catDate.replace(/-/g,'.')+' '+S.catTime+'</span></div><div class="success-card-row"><span>합계</span><span>'+S.catConceptPrice.toLocaleString()+'원</span></div>';
+    document.getElementById('success-icon').textContent='😾'; doSubmit(data,card);
+  }
+}
+function doSubmit(data,cardHTML){
+  var overlay=document.getElementById('loading-overlay'); overlay.classList.add('active');
+  window.__saveBooking(data).then(function(id){
+    overlay.classList.remove('active');
+    if(data.date) allBookingDates[data.date]=(allBookingDates[data.date]||0)+1;
+    document.getElementById('success-card').innerHTML=cardHTML;
+    if(id) document.getElementById('booking-id').textContent='예약 번호 · '+String(id).toUpperCase();
+    // 예약금 금액 동적 설정
+    var depositEl = document.getElementById('success-deposit-amount');
+    if(depositEl) depositEl.textContent = '예약금 ' + (data.studio==='불만고양이레코즈' ? '10,000원' : '30,000원');
+    document.getElementById('main-wrap').style.display='none';
+    document.getElementById('success-screen').classList.add('active');
+    window.scrollTo(0,0);
+    // 신청 즉시 이메일 발송
+    sendBookingRequestNotification(Object.assign({}, data, {id: id}));
+    // 카카오 자동 오픈 비활성 (추후 알림톡 연동)
+  });
+}
+
+// ---- 예약 신청 즉시 알림 ----
+function sendBookingRequestNotification(b){
+  var timeLabel = b.time + (b.timeEnd ? ' - ' + b.timeEnd : '');
+  var params = {
+    customer_name:  b.name,
+    customer_phone: b.phone,
+    studio:         b.studio || '풋사과 포토클럽',
+    concept:        b.concept || '—',
+    cut:            b.cut    || '—',
+    date:           (b.date  || '').replace(/-/g, '.'),
+    time:           timeLabel,
+    total_price:    b.totalPrice ? b.totalPrice.toLocaleString() + '원' : '—',
+    memo:           b.memo   || '없음',
+    deposit_amount: (b.studio === '불만고양이레코즈' ? '10,000원' : '30,000원'),
+    deposit_bank:   'KB국민은행',
+    deposit_account:'28060104064292',
+    deposit_name:   '이유민',
+    kakao_url:      'http://pf.kakao.com/_BLxmZK/chat',
+    booking_id:     b.id ? String(b.id).toUpperCase() : '—',
+    to_email:       ADMIN_EMAIL,
+    name:           '풋사과 포토클럽',
+  };
+
+  // 손님에게 신청 이메일
+  if(b.email){
+    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_CUSTOMER, Object.assign({}, params, {to_email: b.email}))
+      .then(function(){ console.log('[신청] 손님 발송 완료'); })
+      .catch(function(e){ console.warn('[신청] 손님 실패:', e.text||e); });
+  }
+  // 유민에게 신청 이메일 (동일 템플릿)
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_CUSTOMER, Object.assign({}, params, {to_email: ADMIN_EMAIL}))
+    .then(function(){ console.log('[신청] 유민 발송 완료'); })
+    .catch(function(e){ console.warn('[신청] 유민 실패:', e.text||e); });
+}
+
+// ---- EMAIL NOTIFICATION ----
+function sendConfirmNotification(b){
+  var timeLabel=b.time+(b.timeEnd?' - '+b.timeEnd:'');
+  var params={
+    customer_name:b.name, customer_phone:b.phone,
+    studio:b.studio||'풋사과 포토클럽', concept:b.concept||'—',
+    cut:b.cut||'—', date:(b.date||'').replace(/-/g,'.'), time:timeLabel,
+    total_price:b.totalPrice?b.totalPrice.toLocaleString()+'원':'—',
+    memo:b.memo||'없음', kakao_url:'http://pf.kakao.com/_BLxmZK/chat',
+    admin_email:ADMIN_EMAIL, booking_id:String(b.id).toUpperCase(),
+    to_email:ADMIN_EMAIL, name:'풋사과 포토클럽',
+    deposit_amount: (b.studio==='불만고양이레코즈'?'10,000원':'30,000원'),
+    deposit_bank:'KB국민은행', deposit_account:'28060104064292', deposit_name:'이유민',
+  };
+  var results=[];
+  var jobs=[];
+  // 손님에게 확정 이메일
+  if(b.email){
+    jobs.push(emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ADMIN, Object.assign({},params,{to_email:b.email}))
+      .then(function(){results.push('손님 확정 메일 완료');})
+      .catch(function(e){results.push('손님 메일 실패: '+(e.text||e.message||e));}));
+  }
+  // 유민에게 확정 이메일 (동일 템플릿)
+  jobs.push(emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ADMIN, Object.assign({},params,{to_email:ADMIN_EMAIL}))
+    .then(function(){results.push('유민 확정 메일 완료');})
+    .catch(function(e){results.push('유민 메일 실패: '+(e.text||e.message||e));}));
+  return Promise.all(jobs).then(function(){ return results; });
+}
+
+// ---- ADMIN AUTH ----
+function adminLogin(){
+  var pw=document.getElementById('admin-pw').value;
+  if(pw===ADMIN_PW){ adminAuth=true; document.getElementById('admin-login-screen').style.display='none'; document.getElementById('admin-main-screen').style.display='block'; loadAdminCalendar(); renderAdminConceptList(); startBlockedSlotsListener(); setTimeout(function(){ updateAdminStats(); loadAllBookings(); }, 800); }
+  else{ showToast('비밀번호가 틀렸어요.'); document.getElementById('admin-pw').value=''; }
+}
+function adminLogout(){ adminAuth=false; document.getElementById('admin-login-screen').style.display='block'; document.getElementById('admin-main-screen').style.display='none'; document.getElementById('admin-pw').value=''; }
+
+
+// ---- ADMIN TIME MANAGER ----
+function renderAdminTimeManager(dateStr) {
+  var el = document.getElementById('admin-time-manager');
+  var grid = document.getElementById('admin-time-manager-grid');
+  document.getElementById('admin-manage-date-label').textContent = '· ' + dateStr.replace(/-/g, '.');
+  el.style.display = 'block';
+  var body = document.getElementById('time-manager-body');
+  var icon = document.getElementById('time-manager-toggle');
+  if (body) { body.style.display = 'block'; }
+  if (icon) { icon.style.transform = 'rotate(180deg)'; }
+  grid.innerHTML = '';
+
+  var confirmedSlots = [];
+  __localDB.forEach(function(b) {
+    if (b.status === 'confirmed' && b.date === dateStr) {
+      if (b.time) confirmedSlots.push(b.time);
+      if (b.timeEnd) confirmedSlots.push(b.timeEnd);
+    }
+  });
+  var manual = manualBlocked[dateStr] || [];
+
+  TIMES.forEach(function(t) {
+    var btn = document.createElement('button');
+    btn.className = 'time-manage-btn';
+    btn.textContent = t;
+
+    if (confirmedSlots.indexOf(t) >= 0) {
+      btn.classList.add('blocked-booking');
+      btn.title = '예약 확정된 타임';
+    } else if (manual.indexOf(t) >= 0) {
+      btn.classList.add('blocked-manual');
+      btn.title = '클릭하면 차단 해제';
+      (function(time) {
+        btn.onclick = function() {
+          // 수동 차단 해제
+          manualBlocked[dateStr] = manualBlocked[dateStr].filter(function(x) { return x !== time; });
+          var bl = buildBlockedSlots();
+          __blockedListeners.forEach(function(cb) { cb(bl); });
+          renderAdminTimeManager(dateStr);
+          showToast(time + ' 차단 해제됐어요.');
+        };
+      })(t);
+    } else {
+      btn.classList.add('free');
+      btn.title = '클릭하면 차단';
+      (function(time) {
+        btn.onclick = function() {
+          // 수동 차단 추가
+          if (!manualBlocked[dateStr]) manualBlocked[dateStr] = [];
+          if (manualBlocked[dateStr].indexOf(time) < 0) manualBlocked[dateStr].push(time);
+          var bl = buildBlockedSlots();
+          __blockedListeners.forEach(function(cb) { cb(bl); });
+          renderAdminTimeManager(dateStr);
+          showToast(time + ' 타임이 차단됐어요.');
+        };
+      })(t);
+    }
+    grid.appendChild(btn);
+  });
+}
+
+// ---- ADMIN CALENDAR ----
+function adminChangeMonth(dir){ adminMonth+=dir; if(adminMonth>12){adminMonth=1;adminYear++;} if(adminMonth<1){adminMonth=12;adminYear--;} loadAdminCalendar(); updateAdminMonthOpenBtn(); }
+function loadAdminCalendar(){
+  document.getElementById('admin-cal-month').textContent=adminYear+'년 '+MONTHS[adminMonth-1];
+  updateAdminMonthOpenBtn();
+  var grid=document.getElementById('admin-cal-grid'); grid.innerHTML='';
+  ['일','월','화','수','목','금','토'].forEach(function(d){ var el=document.createElement('div');el.className='cal-dow';el.textContent=d;grid.appendChild(el); });
+  var first=new Date(adminYear,adminMonth-1,1).getDay(), total=new Date(adminYear,adminMonth,0).getDate(), today=new Date();
+  var tY=today.getFullYear(),tM=today.getMonth()+1,tD=today.getDate();
+  for(var i=0;i<first;i++){var e=document.createElement('button');e.className='cal-day empty';grid.appendChild(e);}
+  for(var d=1;d<=total;d++){
+    var btn=document.createElement('button'); btn.className='cal-day';
+    var ds=adminYear+'-'+pad(adminMonth)+'-'+pad(d);
+    if(allBookingDates[ds]){ btn.innerHTML=d+'<span class="bdot"></span>'; } else btn.textContent=d;
+    if(holidayDates[ds]){ btn.classList.add('holiday'); }
+    if(adminYear===tY&&adminMonth===tM&&d===tD) btn.classList.add('today');
+    if(ds===adminSelectedDate) btn.classList.add('selected');
+    (function(dateStr,b){ b.onclick=function(){
+      if (adminSelectedDate === dateStr) {
+        // 같은 날짜 다시 클릭 → 선택 해제, 전체 리스트
+        grid.querySelectorAll('.cal-day').forEach(function(x){x.classList.remove('selected');});
+        adminSelectedDate = null;
+        loadAllBookings();
+      } else {
+        grid.querySelectorAll('.cal-day').forEach(function(x){x.classList.remove('selected');}); b.classList.add('selected');
+        adminSelectedDate=dateStr; loadBookingList(dateStr);
+      }
+    };})(ds,btn);
+    grid.appendChild(btn);
+  }
+}
+
+// ---- BOOKING LIST ----
+function loadBookingList(dateStr){
+  var section=document.getElementById('admin-list-section'), listEl=document.getElementById('admin-booking-list');
+  var loading=document.getElementById('admin-loading');
+  var dl = document.getElementById('admin-list-date');
+  dl.textContent = dateStr.replace(/-/g,'.');
+  // 휴무일 버튼
+  var hbtn = document.getElementById('holiday-toggle-btn');
+  if(!hbtn){
+    hbtn = document.createElement('button');
+    hbtn.id = 'holiday-toggle-btn';
+    document.getElementById('admin-list-section').querySelector('.booking-list-header').appendChild(hbtn);
+  }
+  function updateHolidayBtn(){
+    if(holidayDates[dateStr]){
+      hbtn.className='holiday-btn set'; hbtn.textContent='🔴 휴무일 해제';
+    } else {
+      hbtn.className='holiday-btn unset'; hbtn.textContent='휴무일로 설정';
+    }
+  }
+  updateHolidayBtn();
+  hbtn.onclick = function(){
+    if(holidayDates[dateStr]){ delete holidayDates[dateStr]; }
+    else { holidayDates[dateStr] = true; }
+    updateHolidayBtn();
+    loadAdminCalendar();
+    if(S.date || S.catDate) renderCalendar(S.brand||'apple');
+    saveHolidaysToFirebase();
+    showToast(holidayDates[dateStr] ? '휴무일로 설정됐어요.' : '휴무일이 해제됐어요.');
+  };
+  document.getElementById('admin-booking-count').textContent='';
+  listEl.innerHTML=''; loading.style.display='block'; section.style.display='block';
+  // 타임 관리 숨기기 (예약 로드 후 아래에 표시)
+  var tm = document.getElementById('admin-time-manager');
+  if (tm) tm.style.display = 'none';
+  window.__getBookingsByDate(dateStr).then(function(bookings){
+    loading.style.display='none';
+    allBookingDates[dateStr]=bookings.length; loadAdminCalendar();
+    document.getElementById('admin-booking-count').textContent=bookings.length>0?'총 '+bookings.length+'건':'';
+    if(bookings.length===0){ listEl.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><p>이 날짜에 예약이 없어요.</p></div>'; }
+    else { bookings.forEach(function(b){ listEl.appendChild(buildBookingCard(b)); }); }
+    renderAdminTimeManager(dateStr);
+  });
+}
+function buildBookingCard(b){
+  var card=document.createElement('div');
+  card.className='booking-card'+(b.status==='confirmed'?' confirmed':'')+(b.status==='cancelled'?' cancelled':'');
+  card.id='card-'+b.id;
+  var tl=b.time+(b.timeEnd?' - '+b.timeEnd:'');
+  var st={pending:'대기중',confirmed:'확정',cancelled:'취소'}[b.status]||b.status;
+  card.innerHTML=
+    '<div class="booking-card-header" onclick="toggleCard(\''+b.id+'\')">'+
+      '<div class="booking-time-badge">'+tl+'</div>'+
+      '<div style="flex:1;min-width:0"><div class="booking-name">'+b.name+'</div><div class="booking-concept">'+(b.studio||'')+(b.concept?' · '+b.concept:'')+'</div></div>'+
+      '<span class="status-badge '+(b.status||'pending')+'">'+st+'</span>'+
+      '<span class="booking-chevron">▼</span>'+
+    '</div>'+
+    '<div class="booking-card-body">'+
+      '<dl class="booking-detail-grid">'+
+        '<dt>연락처</dt><dd>'+b.phone+'</dd>'+
+        (b.email?'<dt>이메일</dt><dd>'+b.email+'</dd>':'')+
+        (b.instagram?'<dt>인스타그램</dt><dd>'+b.instagram+'</dd>':'')+
+        (b.cut?'<dt>컷 수</dt><dd>'+b.cut+'</dd>':'')+
+        '<dt>합계</dt><dd>'+(b.totalPrice?b.totalPrice.toLocaleString()+'원':'—')+'</dd>'+
+        (b.memo?'<dt>요청사항</dt><dd>'+b.memo+'</dd>':'')+
+      '</dl>'+
+      '<div class="action-row">'+
+        '<button class="action-btn confirm" id="btn-confirm-'+b.id+'" onclick="updateStatus(\''+b.id+'\',\'confirmed\')"'+(b.status==='confirmed'?' disabled':'')+'>✓ 확정</button>'+
+        '<button class="action-btn edit" onclick="openEditModal(\''+b.id+'\')">✎ 수정</button>'+
+        '<button class="action-btn cancel" id="btn-cancel-'+b.id+'" onclick="updateStatus(\''+b.id+'\',\'cancelled\')"'+(b.status==='cancelled'?' disabled':'')+'>✕ 취소</button>'+
+      '</div>'+
+    '</div>';
+  return card;
+}
+function toggleCard(id){ document.getElementById('card-'+id).classList.toggle('open'); }
+
+// ---- STATUS UPDATE ----
+function updateStatus(id,status){
+  var overlay=document.getElementById('loading-overlay'); overlay.classList.add('active');
+  window.__updateBookingStatus(id,status).then(function(){
+    var card=document.getElementById('card-'+id);
+    if(card){
+      card.className='booking-card'+(status==='confirmed'?' confirmed':'')+(status==='cancelled'?' cancelled':'');
+      var badge=card.querySelector('.status-badge'), text={pending:'대기중',confirmed:'확정',cancelled:'취소'}[status];
+      badge.textContent=text; badge.className='status-badge '+status;
+      var cb=card.querySelector('#btn-confirm-'+id), xb=card.querySelector('#btn-cancel-'+id);
+      if(cb) cb.disabled=(status==='confirmed'); if(xb) xb.disabled=(status==='cancelled');
+    }
+    overlay.classList.remove('active');
+    if(status==='confirmed'){
+      var b=__localDB.find(function(x){return x.id===id;});
+      if(b){ showToast('확정 완료! 이메일 발송 중...'); sendConfirmNotification(b).then(function(results){ console.log('[이메일 결과]', results); showToast(results.join(' · ')); }).catch(function(e){ console.error('[이메일 에러]', e); showToast('이메일 오류: '+e); }); }
+    } else { showToast('예약이 취소되었어요.'); }
+  });
+}
+
+// ---- BLOCKED SLOTS ----
+function startBlockedSlotsListener(){
+  window.__subscribeBlockedSlots(function(bl){
+    blockedSlots=bl;
+    if(S.date) renderTimes(S.brand||'apple');
+    if(S.catDate) renderTimes('cat');
+  });
+}
+
+// ---- EDIT MODAL ----
+function openEditModal(id){
+  var b=__localDB.find(function(x){return x.id===id;}); if(!b) return;
+  editTarget=JSON.parse(JSON.stringify(b));
+  var isApple=b.studio==='풋사과 포토클럽', concepts=isApple?CONCEPTS_APPLE:CONCEPTS_CAT;
+  var list=document.getElementById('modal-concept-list'); list.innerHTML='';
+  concepts.forEach(function(c){
+    var btn=document.createElement('button'); btn.className='modal-concept-btn'+(c.name===editTarget.concept?' selected':'');
+    btn.innerHTML='<span class="em">'+c.emoji+'</span><span class="nm">'+c.name+'</span>';
+    btn.onclick=function(){ list.querySelectorAll('.modal-concept-btn').forEach(function(x){x.classList.remove('selected');}); btn.classList.add('selected'); editTarget.concept=c.name; };
+    list.appendChild(btn);
+  });
+  var cw=document.getElementById('modal-cut-wrap'); cw.style.display=isApple?'block':'none';
+  if(isApple){ document.getElementById('mcut-1').classList.toggle('selected',editTarget.cut==='1컷'); document.getElementById('mcut-4').classList.toggle('selected',editTarget.cut==='4컷'); }
+  document.getElementById('modal-date').value=editTarget.date||'';
+  modalRenderTimes(editTarget.date,editTarget.time,editTarget.timeEnd,editTarget.cut==='4컷');
+  document.getElementById('modal-name').value=editTarget.name||'';
+  document.getElementById('modal-phone').value=editTarget.phone||'';
+  document.getElementById('modal-email').value=editTarget.email||'';
+  document.getElementById('modal-insta').value=editTarget.instagram||'';
+  document.getElementById('modal-memo').value=editTarget.memo||'';
+  document.getElementById('edit-modal-backdrop').classList.add('open'); document.body.style.overflow='hidden';
+}
+function closeEditModal(e){
+  if(e&&e.target!==document.getElementById('edit-modal-backdrop')) return;
+  document.getElementById('edit-modal-backdrop').classList.remove('open'); document.body.style.overflow=''; editTarget=null;
+}
+function modalSelectCut(cut,price,el){
+  document.querySelectorAll('.modal-cut-btn').forEach(function(b){b.classList.remove('selected');}); el.classList.add('selected');
+  editTarget.cut=cut; editTarget.cutPrice=price; editTarget.totalPrice=price; editTarget.time=null; editTarget.timeEnd=null;
+  modalRenderTimes(editTarget.date,null,null,cut==='4컷');
+}
+function modalDateChange(){ editTarget.date=document.getElementById('modal-date').value; editTarget.time=null; editTarget.timeEnd=null; modalRenderTimes(editTarget.date,null,null,editTarget.cut==='4컷'); }
+function modalRenderTimes(dateStr,selTime,selTimeEnd,is4){
+  var grid=document.getElementById('modal-time-grid'); grid.innerHTML='';
+  if(!dateStr){grid.innerHTML='<p style="font-size:12px;color:var(--ink-faint);grid-column:1/-1">날짜를 먼저 선택해 주세요.</p>';return;}
+  var selfSlots=[]; if(editTarget){if(editTarget.time)selfSlots.push(editTarget.time);if(editTarget.timeEnd)selfSlots.push(editTarget.timeEnd);}
+  var booked=(blockedSlots[dateStr]||[]).filter(function(t){return selfSlots.indexOf(t)<0;});
+  TIMES.forEach(function(t,idx){
+    var btn=document.createElement('button'); btn.className='modal-time-btn';
+    var isLast=idx===TIMES.length-1,nextT=TIMES[idx+1],nextBooked=nextT&&booked.indexOf(nextT)>=0,unavail4=is4&&(isLast||nextBooked);
+    if(booked.indexOf(t)>=0||unavail4){btn.classList.add('booked');btn.textContent=t;}
+    else{
+      if(t===selTime||t===selTimeEnd) btn.classList.add('selected');
+      if(is4&&nextT){btn.innerHTML='<span style="display:block;font-weight:500">'+t+'</span><span style="display:block;font-size:10px;opacity:.7">~'+nextT+'</span>';}else{btn.textContent=t;}
+      (function(time,b,i4,nt){b.onclick=function(){
+        grid.querySelectorAll('.modal-time-btn').forEach(function(x){x.classList.remove('selected');}); b.classList.add('selected');
+        editTarget.time=time; if(i4&&nt){editTarget.timeEnd=nt;var nb=b.nextElementSibling;if(nb&&!nb.classList.contains('booked'))nb.classList.add('selected');}else editTarget.timeEnd=null;
+      };})(t,btn,is4,nextT);
+    }
+    grid.appendChild(btn);
+  });
+}
+function saveEdit(){
+  if(!editTarget) return;
+  if(!editTarget.concept){showToast('컨셉을 선택해 주세요.');return;}
+  if(!editTarget.date){showToast('날짜를 선택해 주세요.');return;}
+  if(!editTarget.time){showToast('시간을 선택해 주세요.');return;}
+  var name=document.getElementById('modal-name').value.trim(), phone=document.getElementById('modal-phone').value.trim();
+  if(!name){showToast('이름을 입력해 주세요.');return;} if(!phone){showToast('연락처를 입력해 주세요.');return;}
+  editTarget.name=name; editTarget.phone=phone;
+  editTarget.email=document.getElementById('modal-email').value.trim()||null;
+  editTarget.instagram=document.getElementById('modal-insta').value.trim()||null;
+  editTarget.memo=document.getElementById('modal-memo').value.trim()||null;
+  var idx=__localDB.findIndex(function(x){return x.id===editTarget.id;});
+  if(idx>=0){ __localDB[idx]=editTarget; var bl=buildBlockedSlots(); __blockedListeners.forEach(function(cb){cb(bl);}); }
+  var old=document.getElementById('card-'+editTarget.id);
+  if(old){ var nc=buildBookingCard(editTarget);nc.classList.add('open');old.replaceWith(nc); }
+  allBookingDates={}; __localDB.forEach(function(b){allBookingDates[b.date]=(allBookingDates[b.date]||0)+1;}); loadAdminCalendar(); if(adminAuth) updateAdminStats();
+  closeEditModal(); showToast('예약 정보가 수정되었어요.');
+}
+
+
+// ---- CONCEPT DATA ----
+var CONCEPTS_DATA = {
+  apple: [
+    { id:'a1', emoji:'🐰', name:'good night bunny!', sub:'굿나잇 버니', desc:'아늑한 달빛 아래, 토끼처럼 사랑스러운 무드', price:'1컷 70,000원 / 4컷 120,000원', img:'', photos:[], outfits:[] },
+    { id:'a2', emoji:'🌊', name:'여름 한 조각', sub:'A Slice of Summer', desc:'청량한 여름 감성, 시원한 컬러 팔레트', price:'1컷 70,000원 / 4컷 120,000원', img:'', photos:[], outfits:[] },
+    { id:'a3', emoji:'🍒', name:'체리베리 벌쓰데이', sub:'Cherry Berry Birthday', desc:'달콤하고 사랑스러운 생일 무드', price:'1컷 70,000원 / 4컷 120,000원', img:'', photos:[], outfits:[] },
+    { id:'a4', emoji:'⚓', name:'마린걸', sub:'Marine Girl', desc:'바다를 품은 시크하고 청량한 마린 무드', price:'1컷 70,000원 / 4컷 120,000원', img:'', photos:[], outfits:[] },
+    { id:'a5', emoji:'⭐', name:'오늘도 최애가 되고싶어', sub:'Wanna Be Your Fave', desc:'아이돌 화보처럼, 나만의 최애 컨셉', price:'1컷 70,000원 / 4컷 120,000원', img:'', photos:[], outfits:[] }
+  ],
+  cat: [
+    { id:'c1', emoji:'🎵', name:'비닐레코드 세션', sub:'Vinyl Record Session', desc:'레트로 레코드샵 분위기의 인디 감성', price:'35,000원~', img:'', photos:[], outfits:[] },
+    { id:'c2', emoji:'🌙', name:'밤의 스튜디오', sub:'Night Studio', desc:'야간 감성, 네온과 어둠이 어우러진 무드', price:'35,000원~', img:'', photos:[], outfits:[] },
+    { id:'c3', emoji:'🎸', name:'얼터너티브', sub:'Alternative', desc:'밴드 인디 씬의 거친 에너지', price:'35,000원~', img:'', photos:[], outfits:[] }
+  ]
+};
+var conceptIdCounter = 100;
+function generateConceptId(){ return 'cid-' + (conceptIdCounter++); }
+
+function renderConceptTab() {
+  var el = document.getElementById('concept-tab-content');
+  if (!el) return;
+  el.innerHTML = '';
+  function renderSection(label, list) {
+    if (list.length === 0) return;
+    var sl = document.createElement('p');
+    sl.className = 'concept-section-label';
+    sl.style.marginTop = '1.25rem';
+    sl.textContent = label;
+    el.appendChild(sl);
+    var grid = document.createElement('div');
+    grid.className = 'concept-tab-grid';
+    list.forEach(function(item) {
+      var card = document.createElement('div');
+      card.className = 'concept-tab-card';
+      var imgHtml = item.img
+        ? '<div class="concept-tab-img-wrap"><img class="concept-tab-img" src="'+item.img+'" alt="'+item.name+'"></div>'
+        : '<div class="concept-tab-img-placeholder">'+item.emoji+'</div>';
+      var bk = label === '🍏 풋사과 포토클럽' ? 'apple' : 'cat';
+      var ii = list.indexOf(item);
+      card.innerHTML = imgHtml +
+        '<div class="concept-tab-body">' +
+          '<p class="concept-tab-studio">'+label+'</p>' +
+          '<p class="concept-tab-name">'+item.name+'</p>' +
+          (item.sub ? '<p class="concept-tab-desc" style="font-size:11px;margin-bottom:4px">'+item.sub+'</p>' : '') +
+          (function(){
+            if (item.outfits && item.outfits.length) {
+              var txt = '👗 ' + item.outfits.map(function(o){ return o.name + (o.size ? ' ('+o.size+')' : ''); }).join(' · ');
+              return '<p class="concept-tab-desc">'+txt+'</p>';
+            }
+            return item.desc ? '<p class="concept-tab-desc">'+item.desc+'</p>' : '';
+          })() +
+          '<p class="concept-tab-price">'+item.price+'</p>' +
+        '</div>' +
+        '<button class="concept-tab-book-btn">예약하기</button>';
+      (function(b2, i2) {
+        card.querySelector('.concept-tab-book-btn').onclick = function(e) {
+          e.stopPropagation();
+          bookFromConceptCard(b2, i2);
+        };
+        card.style.cursor = 'pointer';
+        card.onclick = function() { openConceptDetail(b2, i2); };
+      })(bk, ii);
+      grid.appendChild(card);
+    });
+    el.appendChild(grid);
+  }
+  renderSection('🍏 풋사과 포토클럽', CONCEPTS_DATA.apple);
+  renderSection('😾 불만고양이레코즈', CONCEPTS_DATA.cat);
+}
+
+function renderAdminConceptList() {
+  ['apple','cat'].forEach(function(brand) {
+    var el = document.getElementById('admin-concept-cards-'+brand);
+    if (!el) return;
+    el.innerHTML = '';
+    CONCEPTS_DATA[brand].forEach(function(item, idx) {
+      var card = document.createElement('div');
+      card.className = 'admin-concept-card';
+      card.innerHTML =
+        '<div class="em">'+item.emoji+'</div>' +
+        '<div class="info">' +
+          '<div class="cn">'+item.name+'</div>' +
+          '<div class="cd">'+(item.desc||'')+'</div>' +
+          '<div class="cp">'+item.price+'</div>' +
+        '</div>' +
+        '<div class="concept-action-row">' +
+          '<button class="concept-action-btn edit-btn" onclick="editConcept(\''+brand+'\','+idx+')">수정</button>' +
+          '<button class="concept-action-btn edit-btn" onclick="openMediaMgr(\''+brand+'\','+idx+')" style="font-size:11px;padding:5px 8px;border-color:#9DC08B;color:#2E5822">사진/의상</button>' +
+          '<button class="concept-action-btn del-btn" onclick="deleteConcept(\''+brand+'\','+idx+')">삭제</button>' +
+        '</div>';
+      el.appendChild(card);
+    });
+    if (CONCEPTS_DATA[brand].length === 0) {
+      el.innerHTML = '<p style="font-size:13px;color:var(--ink-faint);padding:8px 0">아직 컨셉이 없어요.</p>';
+    }
+  });
+}
+
+function toggleAddConceptForm() {
+  var f = document.getElementById('add-concept-form');
+  if (!f) return;
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (f.style.display === 'block') {
+    ['new-concept-studio','new-concept-emoji','new-concept-name','new-concept-sub','new-concept-desc','new-concept-price','new-concept-img'].forEach(function(id){
+      var el = document.getElementById(id); if(el) el.value = '';
+    });
+  }
+}
+
+function saveNewConcept() {
+  var studio = document.getElementById('new-concept-studio').value.trim();
+  var name   = document.getElementById('new-concept-name').value.trim();
+  var emoji  = document.getElementById('new-concept-emoji').value.trim() || '📷';
+  if (!studio || !name) { showToast('스튜디오와 컨셉명은 필수예요.'); return; }
+  var brand = studio.indexOf('불만') >= 0 ? 'cat' : 'apple';
+  CONCEPTS_DATA[brand].push({
+    id:    generateConceptId(),
+    emoji: emoji,
+    name:  name,
+    sub:   document.getElementById('new-concept-sub').value.trim(),
+    desc:  document.getElementById('new-concept-desc').value.trim(),
+    price: document.getElementById('new-concept-price').value.trim() || '문의',
+    img:   document.getElementById('new-concept-img').value.trim()
+  });
+  toggleAddConceptForm();
+  renderAdminConceptList();
+  renderConceptTab();
+  syncConceptsToBookingForm();
+  saveConceptsToFirebase();
+  showToast('컨셉이 추가됐어요!');
+}
+
+function deleteConcept(brand, idx) {
+  var name = CONCEPTS_DATA[brand][idx] ? CONCEPTS_DATA[brand][idx].name : '';
+  if (!confirm('"'+name+'" 컨셉을 삭제할까요?')) return;
+  CONCEPTS_DATA[brand].splice(idx, 1);
+  renderAdminConceptList();
+  renderConceptTab();
+  syncConceptsToBookingForm();
+  saveConceptsToFirebase();
+  showToast('컨셉이 삭제됐어요.');
+}
+
+function editConcept(brand, idx) {
+  var item = CONCEPTS_DATA[brand][idx];
+  if (!item) return;
+  var f = document.getElementById('add-concept-form');
+  f.style.display = 'block';
+  document.getElementById('new-concept-studio').value = brand==='apple' ? '풋사과 포토클럽' : '불만고양이레코즈';
+  document.getElementById('new-concept-emoji').value = item.emoji;
+  document.getElementById('new-concept-name').value  = item.name;
+  document.getElementById('new-concept-sub').value   = item.sub || '';
+  document.getElementById('new-concept-desc').value  = item.desc || '';
+  document.getElementById('new-concept-price').value = item.price;
+  document.getElementById('new-concept-img').value   = item.img || '';
+  var saveBtn = f.querySelector('button');
+  saveBtn.textContent = '수정 저장';
+  saveBtn.onclick = function() {
+    CONCEPTS_DATA[brand][idx] = {
+      id:    item.id,
+      emoji: document.getElementById('new-concept-emoji').value.trim() || '📷',
+      name:  document.getElementById('new-concept-name').value.trim(),
+      sub:   document.getElementById('new-concept-sub').value.trim(),
+      desc:  document.getElementById('new-concept-desc').value.trim(),
+      price: document.getElementById('new-concept-price').value.trim(),
+      img:   document.getElementById('new-concept-img').value.trim()
+    };
+    toggleAddConceptForm();
+    saveBtn.textContent = '저장';
+    saveBtn.onclick = saveNewConcept;
+    renderAdminConceptList();
+    renderConceptTab();
+    syncConceptsToBookingForm();
+    showToast('컨셉이 수정됐어요!');
+  };
+}
+
+function syncConceptsToBookingForm() {
+  function makeCheck(){
+    return '<div class="concept-check"><svg viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
+  }
+  var appleList = document.querySelector('#apple-form .concept-list');
+  if (appleList) {
+    appleList.innerHTML = '';
+    CONCEPTS_DATA.apple.forEach(function(item) {
+      var div = document.createElement('div');
+      div.className = 'concept-card';
+      div.dataset.concept = item.name;
+      div.setAttribute('onclick','selectConcept(this)');
+      div.innerHTML = '<div class="concept-emoji">'+item.emoji+'</div><div class="concept-body"><div class="concept-name">'+item.name+'</div>'+(item.sub?'<div class="concept-sub">'+item.sub+'</div>':'')+'</div>'+makeCheck();
+      appleList.appendChild(div);
+    });
+  }
+  var catList = document.querySelector('#cat-form .concept-list');
+  if (catList) {
+    catList.innerHTML = '';
+    CONCEPTS_DATA.cat.forEach(function(item) {
+      var div = document.createElement('div');
+      div.className = 'concept-card';
+      div.dataset.concept = item.name;
+      div.dataset.price = '35000';
+      div.setAttribute('onclick','selectConcept(this)');
+      div.innerHTML = '<div class="concept-emoji">'+item.emoji+'</div><div class="concept-body"><div class="concept-name">'+item.name+'</div>'+(item.sub?'<div class="concept-sub">'+item.sub+'</div>':'')+'</div>'+makeCheck();
+      catList.appendChild(div);
+    });
+  }
+}
+
+
+
+
+
+// ---- 다국어 (i18n) ----
+var currentLang = 'ko';
+var I18N = {
+  ko: {
+
+    'success.title': '예약 접수 완료!',
+    'success.sub': '신청이 완료되었어요! 예약금 입금 후 확정 안내를 드릴게요 🌿',
+    'deposit.title': '💰 예약금 안내',
+    'deposit.desc': '입금해 주시면 예약이 확정돼요!<br>예약금 입금 안내는 입력해 주신 전화번호로 문자로 안내드립니다.',
+    'deposit.bank': '은행', 'deposit.account': '계좌번호', 'deposit.holder': '예금주', 'deposit.amount': '예약금',
+    'deposit.kakaoNotify': '입금 후 카카오 채널로 알려주세요!',
+    'paypal.title': '💳 PayPal 결제 가능',
+    'paypal.desc': '계좌이체가 어려우신 경우 PayPal로 예약금 결제가 가능합니다 (수수료 추가). fx.greenapple26@gmail.com 으로 PayPal 결제를 요청해 주세요.',
+    'cancel.title': '📋 취소 및 날짜 변경 안내',
+    'cancel.desc': '· 촬영 3일 전까지 취소 및 날짜 변경 가능, 예약금 환불됩니다.<br>· 촬영 2일 전부터 취소 및 날짜 변경 불가, 예약금 환불 불가합니다.',
+    'kakao.inquiry': '카카오 채널 문의하기',
+    'btn.backHome': '← 처음으로 돌아가기',    'nav.booking': '🍏 예약하기',
+    'nav.concept': '🎬 컨셉 안내',
+    'header.formula': 'f(🍏) = photo club',
+    'studio.select': '스튜디오 선택',
+    'brand.apple.name': '풋사과<br>포토클럽',
+    'brand.apple.type': '개인화보',
+    'brand.cat.name': '불만고양이<br>레코즈',
+    'brand.cat.type': '셀프촬영',
+    'label.concept': '컨셉 선택',
+    'label.cut': '개인화보 컷 수',
+    'cut.1': '1컷', 'cut.1.price': '70,000원',
+    'cut.4': '4컷', 'cut.4.price': '120,000원',
+    'label.date': '날짜 선택',
+    'label.time': '시간 선택',
+    'hint.selectDateFirst': '날짜를 먼저 선택해 주세요.',
+    'label.contact': '연락처',
+    'label.name': '이름',
+    'placeholder.name': '홍길동',
+    'label.phone': '연락처',
+    'label.email': '이메일',
+    'label.emailSub': '(예약금 안내 및 확정 안내)',
+    'hint.emailConfirm': '예약금 입금 안내는 입력하신 전화번호로 문자 안내드립니다.',
+    'label.summary': '예약 요약',
+    'hint.summaryEmpty': '컨셉과 날짜를 선택하면 요약이 나타나요.',
+    'summary.header.apple': '🍏 풋사과 포토클럽 · 예약 내용',
+    'summary.header.cat': '😾 불만고양이레코즈 · 예약 내용',
+    'label.concept2': '컨셉', 'label.cut2': '컷 수', 'label.date2': '날짜', 'label.time2': '시간', 'label.total': '합계',
+    'btn.submit': '예약 신청하기',
+    'hint.kakao': '접수 후 예약금 확인 후 이메일 확정 안내 · 운영시간 11:00–20:00'
+  },
+  en: {
+
+    'success.title': 'Booking Submitted!',
+    'success.sub': 'Your request has been received! We\'ll confirm your booking after deposit verification 🌿',
+    'deposit.title': '💰 Deposit Information',
+    'deposit.desc': 'Your booking will be confirmed upon deposit payment!<br>Deposit payment instructions will be sent to your phone number via SMS.',
+    'deposit.bank': 'Bank', 'deposit.account': 'Account No.', 'deposit.holder': 'Account Holder', 'deposit.amount': 'Deposit',
+    'deposit.kakaoNotify': 'Please notify us via KakaoTalk after payment!',
+    'paypal.title': '💳 PayPal Payment Available',
+    'paypal.desc': 'If bank transfer is not available, you may pay the deposit via PayPal (additional fees apply). Please email fx.greenapple26@gmail.com to request PayPal payment.',
+    'cancel.title': '📋 Cancellation & Rescheduling Policy',
+    'cancel.desc': '· Cancellation/rescheduling available up to 3 days before the shoot, deposit refundable.<br>· No cancellation/rescheduling within 2 days before the shoot, deposit non-refundable.',
+    'kakao.inquiry': 'Contact via KakaoTalk',
+    'btn.backHome': '← Back to Home',    'nav.booking': '🍏 Booking',
+    'nav.concept': '🎬 Concepts',
+    'header.formula': 'f(🍏) = photo club',
+    'studio.select': 'Select Studio',
+    'brand.apple.name': 'Greenapple<br>Photo Club',
+    'brand.apple.type': 'Portrait',
+    'brand.cat.name': 'Grumpy Cat<br>Records',
+    'brand.cat.type': 'Self Studio',
+    'label.concept': 'Select Concept',
+    'label.cut': 'Number of Cuts',
+    'cut.1': '1 Cut', 'cut.1.price': '₩70,000',
+    'cut.4': '4 Cuts', 'cut.4.price': '₩120,000',
+    'label.date': 'Select Date',
+    'label.time': 'Select Time',
+    'hint.selectDateFirst': 'Please select a date first.',
+    'label.contact': 'Contact Info',
+    'label.name': 'Name',
+    'placeholder.name': 'John Doe',
+    'label.phone': 'Phone',
+    'label.email': 'Email',
+    'label.emailSub': '(deposit & confirmation info)',
+    'hint.emailConfirm': 'Your booking will be confirmed by email after deposit verification.',
+    'label.summary': 'Booking Summary',
+    'hint.summaryEmpty': 'Select a concept and date to see your summary.',
+    'summary.header.apple': '🍏 Greenapple Photo Club · Booking Details',
+    'summary.header.cat': '😾 Grumpy Cat Records · Booking Details',
+    'label.concept2': 'Concept', 'label.cut2': 'Cuts', 'label.date2': 'Date', 'label.time2': 'Time', 'label.total': 'Total',
+    'btn.submit': 'Submit Booking',
+    'hint.kakao': 'Confirmation will be sent by email after deposit verification · Hours 11:00–20:00'
+  },
+  ja: {
+
+    'success.title': 'ご予約を受け付けました！',
+    'success.sub': 'お申し込みが完了しました！予約金のご入金確認後、確定のご案内をいたします 🌿',
+    'deposit.title': '💰 予約金のご案内',
+    'deposit.desc': 'ご入金後、予約が確定します！<br>予約金のお支払い方法は、ご入力いただいた電話番号にSMSにてご案内いたします。',
+    'deposit.bank': '銀行', 'deposit.account': '口座番号', 'deposit.holder': '口座名義', 'deposit.amount': '予約金',
+    'deposit.kakaoNotify': 'ご入金後、カカオトークチャンネルにてお知らせください！',
+    'paypal.title': '💳 PayPalでのお支払いも可能です',
+    'paypal.desc': '銀行振込が難しい場合は、PayPalでの予約金のお支払いが可能です（手数料が別途加算されます）。fx.greenapple26@gmail.com までPayPal決済をご依頼ください。',
+    'cancel.title': '📋 キャンセル・日程変更について',
+    'cancel.desc': '・撮影3日前まではキャンセル・日程変更が可能で、予約金は返金されます。<br>・撮影2日前からはキャンセル・日程変更不可、予約金の返金もできません。',
+    'kakao.inquiry': 'カカオトークでお問い合わせ',
+    'btn.backHome': '← トップに戻る',    'nav.booking': '🍏 ご予約',
+    'nav.concept': '🎬 コンセプト',
+    'header.formula': 'f(🍏) = photo club',
+    'studio.select': 'スタジオを選択',
+    'brand.apple.name': 'プッサグァ<br>フォトクラブ',
+    'brand.apple.type': '個人写真',
+    'brand.cat.name': '不満猫<br>レコーズ',
+    'brand.cat.type': 'セルフ撮影',
+    'label.concept': 'コンセプトを選択',
+    'label.cut': 'カット数',
+    'cut.1': '1カット', 'cut.1.price': '70,000ウォン',
+    'cut.4': '4カット', 'cut.4.price': '120,000ウォン',
+    'label.date': '日付を選択',
+    'label.time': '時間を選択',
+    'hint.selectDateFirst': '先に日付を選択してください。',
+    'label.contact': '連絡先',
+    'label.name': 'お名前',
+    'placeholder.name': '山田太郎',
+    'label.phone': '電話番号',
+    'label.email': 'メール',
+    'label.emailSub': '(予約金案内・確定案内)',
+    'hint.emailConfirm': '予約金確認後、メールにて予約確定のご案内をいたします。',
+    'label.summary': '予約内容',
+    'hint.summaryEmpty': 'コンセプトと日付を選択すると内容が表示されます。',
+    'summary.header.apple': '🍏 プッサグァフォトクラブ・予約内容',
+    'summary.header.cat': '😾 不満猫レコーズ・予約内容',
+    'label.concept2': 'コンセプト', 'label.cut2': 'カット数', 'label.date2': '日付', 'label.time2': '時間', 'label.total': '合計',
+    'btn.submit': '予約を申し込む',
+    'hint.kakao': '予約金確認後、メールにて確定をご案内します · 営業時間 11:00–20:00'
+  },
+  zh: {
+
+    'success.title': '预约申请已完成！',
+    'success.sub': '申请已提交！确认定金到账后将为您发送确认通知 🌿',
+    'deposit.title': '💰 定金缴纳说明',
+    'deposit.desc': '缴纳定金后即可确认预约！<br>定金缴纳说明将通过短信发送至您填写的手机号码。',
+    'deposit.bank': '银行', 'deposit.account': '账号', 'deposit.holder': '户名', 'deposit.amount': '定金',
+    'deposit.kakaoNotify': '转账后请通过KakaoTalk频道通知我们！',
+    'paypal.title': '💳 可使用PayPal付款',
+    'paypal.desc': '如无法银行转账，可使用PayPal缴纳定金（需另付手续费）。请发送邮件至 fx.greenapple26@gmail.com 申请PayPal付款。',
+    'cancel.title': '📋 取消及改期说明',
+    'cancel.desc': '· 拍摄前3天内可取消或改期，定金可退还。<br>· 拍摄前2天起不可取消或改期，定金不予退还。',
+    'kakao.inquiry': '通过KakaoTalk咨询',
+    'btn.backHome': '← 返回首页',    'nav.booking': '🍏 预约',
+    'nav.concept': '🎬 主题介绍',
+    'header.formula': 'f(🍏) = photo club',
+    'studio.select': '选择工作室',
+    'brand.apple.name': '青苹果<br>写真俱乐部',
+    'brand.apple.type': '个人写真',
+    'brand.cat.name': '不满猫<br>唱片',
+    'brand.cat.type': '自助拍摄',
+    'label.concept': '选择主题',
+    'label.cut': '张数选择',
+    'cut.1': '1张', 'cut.1.price': '70,000韩元',
+    'cut.4': '4张', 'cut.4.price': '120,000韩元',
+    'label.date': '选择日期',
+    'label.time': '选择时间',
+    'hint.selectDateFirst': '请先选择日期。',
+    'label.contact': '联系方式',
+    'label.name': '姓名',
+    'placeholder.name': '王小明',
+    'label.phone': '联系电话',
+    'label.email': '邮箱',
+    'label.emailSub': '(定金及确认通知)',
+    'hint.emailConfirm': '确认定金后将通过邮件发送预约确认通知。',
+    'label.summary': '预约摘要',
+    'hint.summaryEmpty': '选择主题和日期后将显示预约摘要。',
+    'summary.header.apple': '🍏 青苹果写真俱乐部 · 预约内容',
+    'summary.header.cat': '😾 不满猫唱片 · 预约内容',
+    'label.concept2': '主题', 'label.cut2': '张数', 'label.date2': '日期', 'label.time2': '时间', 'label.total': '合计',
+    'btn.submit': '提交预约',
+    'hint.kakao': '确认定金后将通过邮件通知确认结果 · 营业时间 11:00–20:00'
+  }
+};
+
+function setLang(lang) {
+  currentLang = lang;
+  var dict = I18N[lang] || I18N.ko;
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n');
+    if (dict[key] !== undefined) el.innerHTML = dict[key];
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+    var key = el.getAttribute('data-i18n-placeholder');
+    if (dict[key] !== undefined) el.placeholder = dict[key];
+  });
+  document.querySelectorAll('.lang-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+  // 외국어일 때만 PayPal 안내 표시
+  var paypalNotice = document.getElementById('paypal-notice');
+  if (paypalNotice) paypalNotice.style.display = (lang !== 'ko') ? 'block' : 'none';
+  // 동적 텍스트 갱신
+  var hintEl = document.getElementById('time-hint');
+  var hintCatEl = document.getElementById('time-hint-cat');
+  if (hintEl && !S.date) hintEl.textContent = dict['hint.selectDateFirst'];
+  if (hintCatEl && !S.catDate) hintCatEl.textContent = dict['hint.selectDateFirst'];
+  try { localStorage.setItem('ga_lang', lang); } catch(e) {}
+}
+
+// ---- 컨셉 상세 ----
+var _detailBrand = null, _detailIdx = null;
+
+
+var _cdCurIdx = 0;
+var _cdTotal = 0;
+
+function cdScrollTo(idx) {
+  var gw = document.getElementById('cd-gallery-wrap');
+  if (!gw) return;
+  _cdCurIdx = Math.max(0, Math.min(idx, _cdTotal - 1));
+  var inner = document.getElementById('cd-gallery-inner');
+  if (inner) inner.style.transform = 'translateX(-' + (_cdCurIdx * 100) + '%)';
+  // dot 업데이트
+  document.querySelectorAll('.cd-dot').forEach(function(d, i) {
+    d.classList.toggle('active', i === _cdCurIdx);
+  });
+}
+
+function cdInitTouch(gw) {
+  var startX = 0, moved = false;
+  gw.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].clientX;
+    moved = false;
+  }, { passive: true });
+  gw.addEventListener('touchend', function(e) {
+    var diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      cdScrollTo(diff > 0 ? _cdCurIdx + 1 : _cdCurIdx - 1);
+    }
+  }, { passive: true });
+}
+
+function openConceptDetail(brand, idx) {
+  var item = CONCEPTS_DATA[brand][idx];
+  if (!item) return;
+  _detailBrand = brand; _detailIdx = idx;
+
+  var gw = document.getElementById('cd-gallery-wrap');
+  var dotsEl = document.getElementById('cd-dots');
+  var photos = (item.photos && item.photos.length) ? item.photos : (item.img ? [item.img] : []);
+  _cdCurIdx = 0;
+  _cdTotal = photos.length;
+  // 슬라이더 내부 wrapper
+  var inner = document.createElement('div');
+  inner.style.cssText = 'display:flex;transition:transform .35s cubic-bezier(.4,0,.2,1);width:100%';
+  inner.id = 'cd-gallery-inner';
+  if (photos.length) {
+    inner.innerHTML = photos.map(function(u){ return '<img class="cd-gallery-img" src="'+u+'" onerror="this.style.opacity=.3">'; }).join('');
+    gw.innerHTML = '';
+    gw.appendChild(inner);
+    gw.style.transform = '';
+    // dot
+    if (photos.length > 1) {
+      dotsEl.innerHTML = photos.map(function(_,i){ return '<button class="cd-dot'+(i===0?' active':'')+'" onclick="cdScrollTo('+i+')"></button>'; }).join('');
+    } else {
+      dotsEl.innerHTML = '';
+    }
+    cdInitTouch(inner);
+  } else {
+    gw.innerHTML = '<div class="cd-gallery-placeholder">'+item.emoji+'</div>';
+    dotsEl.innerHTML = '';
+  }
+
+  document.getElementById('cd-back-label').textContent = item.name;
+  document.getElementById('cd-studio').textContent = brand==='apple' ? '🍏 풋사과 포토클럽' : '😾 불만고양이레코즈';
+  document.getElementById('cd-name').textContent = item.name;
+  document.getElementById('cd-sub').textContent = item.sub || '';
+  document.getElementById('cd-desc').textContent = item.desc || '';
+  document.getElementById('cd-price').textContent = item.price || '문의';
+
+  var ow = document.getElementById('cd-outfits-wrap');
+  var og = document.getElementById('cd-outfit-grid');
+  var outfits = item.outfits || [];
+  if (outfits.length) {
+    ow.style.display = 'block';
+    og.innerHTML = outfits.map(function(o){
+      return '<div class="cd-outfit-card">'+(o.img?'<img class="cd-outfit-img" src="'+o.img+'">':'<div class="cd-outfit-placeholder">👗</div>')+'<div class="cd-outfit-name">'+o.name+'</div>'+(o.size?'<span class="cd-outfit-size">'+o.size+'</span>':'')+'</div>';
+    }).join('');
+  } else { ow.style.display = 'none'; }
+
+  var cdp = document.getElementById('concept-detail-page');
+  cdp.style.display = 'block';
+  cdp.style.pointerEvents = 'auto';
+  document.querySelector('nav.tab-nav').style.display = 'none';
+  document.getElementById('concept-tab').style.display = 'none';
+  window.scrollTo(0,0);
+}
+
+function closeConceptDetail() {
+  var cdp = document.getElementById('concept-detail-page');
+  cdp.style.display = 'none';
+  cdp.style.pointerEvents = 'none';
+  document.querySelector('nav.tab-nav').style.display = 'flex';
+  switchTab('concept');
+}
+
+function bookFromConceptCard(brand, idx) {
+  _detailBrand = brand; _detailIdx = idx;
+  switchTab('booking');
+  selectBrand(brand);
+  setTimeout(function() {
+    var name = CONCEPTS_DATA[brand][idx].name;
+    document.querySelectorAll('#'+(brand==='apple'?'apple':'cat')+'-form .concept-card').forEach(function(c){
+      if (c.dataset.concept === name) { selectConcept(c); c.scrollIntoView({behavior:'smooth',block:'center'}); }
+    });
+  }, 200);
+}
+
+function bookFromDetail() {
+  if (_detailBrand !== null && _detailIdx !== null) bookFromConceptCard(_detailBrand, _detailIdx);
+}
+
+// ---- 미디어 관리 ----
+var _mmBrand = null, _mmIdx = null;
+
+function openMediaMgr(brand, idx) {
+  _mmBrand = brand; _mmIdx = idx;
+  var item = CONCEPTS_DATA[brand][idx];
+  document.getElementById('media-mgr-title').textContent = item.name + ' · 사진/의상';
+  document.getElementById('mmgr-main-img').value = item.img || '';
+  mmgrRenderPhotos(item.photos || []);
+  mmgrRenderOutfits(item.outfits || []);
+  var bd = document.getElementById('media-mgr-backdrop');
+  bd.classList.add('open');
+  bd.style.pointerEvents = 'auto';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMmgr(e) {
+  if (e && e.target !== document.getElementById('media-mgr-backdrop')) return;
+  var bd = document.getElementById('media-mgr-backdrop');
+  bd.classList.remove('open');
+  bd.style.pointerEvents = 'none';
+  document.body.style.overflow = '';
+}
+
+function mmgrRenderPhotos(photos) {
+  var el = document.getElementById('mmgr-photo-list');
+  if (!photos.length) { el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);padding:4px 0">추가된 사진이 없어요.</p>'; return; }
+  el.innerHTML = photos.map(function(u,i){ return '<div class="admin-photo-item"><img src="'+u+'" onerror="this.style.opacity=.3"><span class="url">'+u+'</span><button class="admin-del-btn" onclick="mmgrDelPhoto('+i+')">x</button></div>'; }).join('');
+}
+
+function mmgrRenderOutfits(outfits) {
+  var el = document.getElementById('mmgr-outfit-list');
+  if (!outfits.length) { el.innerHTML = '<p style="font-size:12px;color:var(--ink-faint);padding:4px 0">추가된 의상이 없어요.</p>'; return; }
+  el.innerHTML = outfits.map(function(o,i){ return '<div class="admin-outfit-item">'+(o.img?'<img src="'+o.img+'" onerror="this.style.opacity=.3">':'<div style="width:36px;height:36px;border-radius:5px;background:var(--surface);display:flex;align-items:center;justify-content:center">👗</div>')+'<span class="nm">'+o.name+(o.size?' · <span style="color:var(--ink-faint);font-size:11px">'+o.size+'</span>':'')+'</span><button class="admin-del-btn" onclick="mmgrDelOutfit('+i+')">x</button></div>'; }).join('');
+}
+
+function mmgrAddPhoto() {
+  var url = document.getElementById('mmgr-new-photo').value.trim();
+  if (!url) { showToast('URL을 입력해주세요.'); return; }
+  var item = CONCEPTS_DATA[_mmBrand][_mmIdx];
+  if (!item.photos) item.photos = [];
+  item.photos.push(url);
+  document.getElementById('mmgr-new-photo').value = '';
+  mmgrRenderPhotos(item.photos);
+}
+
+function mmgrDelPhoto(i) {
+  var item = CONCEPTS_DATA[_mmBrand][_mmIdx];
+  item.photos.splice(i,1); mmgrRenderPhotos(item.photos);
+}
+
+function mmgrAddOutfit() {
+  var name = document.getElementById('mmgr-outfit-name').value.trim();
+  var size = document.getElementById('mmgr-outfit-size').value.trim();
+  var img  = document.getElementById('mmgr-outfit-img').value.trim();
+  if (!name) { showToast('의상 이름을 입력해주세요.'); return; }
+  var item = CONCEPTS_DATA[_mmBrand][_mmIdx];
+  if (!item.outfits) item.outfits = [];
+  item.outfits.push({name:name, size:size, img:img});
+  document.getElementById('mmgr-outfit-name').value = '';
+  document.getElementById('mmgr-outfit-size').value = '';
+  document.getElementById('mmgr-outfit-img').value = '';
+  mmgrRenderOutfits(item.outfits);
+}
+
+function mmgrDelOutfit(i) {
+  var item = CONCEPTS_DATA[_mmBrand][_mmIdx];
+  item.outfits.splice(i,1); mmgrRenderOutfits(item.outfits);
+}
+
+function saveMmgr() {
+  var item = CONCEPTS_DATA[_mmBrand][_mmIdx];
+  item.img = document.getElementById('mmgr-main-img').value.trim();
+  renderConceptTab();
+  renderAdminConceptList();
+  syncConceptsToBookingForm();
+  saveConceptsToFirebase();
+  closeMmgr();
+  showToast('저장됐어요!');
+}
+
+
+function switchAdminInner(panel) {
+  ['booking','concept'].forEach(function(p) {
+    document.getElementById('admin-panel-'+p).style.display = p===panel ? 'block' : 'none';
+    document.getElementById('aib-'+p).classList.toggle('active', p===panel);
+  });
+}
+
+
+
+// ---- 휴무일 Firebase 연동 ----
+function saveHolidaysToFirebase() {
+  db.collection('settings').doc('holidays').set({
+    dates: holidayDates,
+    openMonths: openMonths,
+    updatedAt: new Date().toISOString()
+  }).catch(function(e){ console.warn('휴무일 저장 실패:', e); });
+}
+
+function loadHolidaysFromFirebase(callback) {
+  db.collection('settings').doc('holidays').get().then(function(doc) {
+    if (doc.exists) {
+      var data = doc.data();
+      if (data.dates) holidayDates = data.dates;
+      if (data.openMonths) openMonths = data.openMonths;
+    }
+    if (callback) callback();
+  }).catch(function(e) {
+    console.warn('휴무일 로드 실패:', e);
+    if (callback) callback();
+  });
+}
+
+function toggleAdminMonthOpen() {
+  var key = adminYear + '-' + pad(adminMonth);
+  if (openMonths[key]) { delete openMonths[key]; }
+  else { openMonths[key] = true; }
+  saveHolidaysToFirebase();
+  updateAdminMonthOpenBtn();
+  renderCalendar('apple');
+  renderCalendar('cat');
+}
+
+function updateAdminMonthOpenBtn() {
+  var key = adminYear + '-' + pad(adminMonth);
+  var isOpen = !!openMonths[key];
+  var btn = document.getElementById('admin-month-open-btn');
+  if (!btn) return;
+  btn.textContent = isOpen ? '✓ ' + adminMonth + '월 예약 오픈중' : '○ ' + adminMonth + '월 예약 마감';
+  btn.style.background = isOpen ? 'var(--apple-light)' : '#FEF2F2';
+  btn.style.color = isOpen ? 'var(--apple-dark)' : '#B91C1C';
+  btn.style.borderColor = isOpen ? 'var(--apple)' : '#FCA5A5';
+}
+
+// ---- 관리자 통계 ----
+function updateAdminStats() {
+  var now = new Date();
+  var todayStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  var monthPrefix = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+
+  // 이번주 월~일
+  var dayOfWeek = now.getDay(); // 0=일
+  var monday = new Date(now); monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+  var sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+  function toStr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  var monStr = toStr(monday), sunStr = toStr(sunday);
+
+  var monthCount = 0, weekCount = 0, todayCount = 0, revenue = 0;
+
+  __localDB.forEach(function(b) {
+    if (b.status === 'cancelled') return;
+    var d = b.date || '';
+    if (d.startsWith(monthPrefix)) {
+      monthCount++;
+      // 매출 계산
+      var price = b.totalPrice || 0;
+      if (!price && b.cut) {
+        if (b.cut === '1컷') price = 70000;
+        else if (b.cut === '4컷') price = 120000;
+        else price = parseInt((b.cut||'').replace(/[^0-9]/g,'')) || 0;
+      }
+      revenue += price;
+    }
+    if (d >= monStr && d <= sunStr) weekCount++;
+    if (d === todayStr) todayCount++;
+  });
+
+  var statMonth = document.getElementById('stat-month');
+  var statWeek = document.getElementById('stat-week');
+  var statToday = document.getElementById('stat-today');
+  var statRevenue = document.getElementById('stat-revenue');
+  if (statMonth) statMonth.textContent = monthCount + '건';
+  if (statWeek) statWeek.textContent = weekCount + '건';
+  if (statToday) statToday.textContent = todayCount + '건';
+  if (statRevenue) statRevenue.textContent = revenue > 0 ? revenue.toLocaleString() + '원' : '0원';
+}
+
+
+function toggleTimeManager() {
+  var body = document.getElementById('time-manager-body');
+  var icon = document.getElementById('time-manager-toggle');
+  var open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  icon.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+
+// ---- 전체 예약 리스트 ----
+function loadAllBookings() {
+  var section = document.getElementById('admin-list-section');
+  var listEl = document.getElementById('admin-booking-list');
+  var loading = document.getElementById('admin-loading');
+  var dl = document.getElementById('admin-list-date');
+  var countEl = document.getElementById('admin-booking-count');
+
+  // 휴무일 버튼 숨기기
+  var hbtn = document.getElementById('holiday-toggle-btn');
+  if (hbtn) hbtn.style.display = 'none';
+
+  dl.textContent = '전체 예약';
+  countEl.textContent = '';
+  listEl.innerHTML = '';
+  loading.style.display = 'block';
+  section.style.display = 'block';
+
+  // 타임 관리 숨기기
+  var tm = document.getElementById('admin-time-manager');
+  if (tm) tm.style.display = 'none';
+
+  // Firebase에서 모든 예약 가져오기
+  db.collection('bookings').orderBy('date').get().then(function(snap) {
+    loading.style.display = 'none';
+    var bookings = [];
+    snap.forEach(function(doc) { bookings.push(doc.data()); });
+    // 취소 제외 + 날짜순 정렬
+    bookings = bookings.filter(function(b){ return b.status !== 'cancelled'; });
+    bookings.sort(function(a,b){ return (a.date+a.time) > (b.date+b.time) ? 1 : -1; });
+    countEl.textContent = bookings.length > 0 ? '총 ' + bookings.length + '건' : '';
+    if (bookings.length === 0) {
+      listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>예약이 없어요.</p></div>';
+      return;
+    }
+    var lastDate = '';
+    bookings.forEach(function(b) {
+      if (b.date !== lastDate) {
+        var dateHeader = document.createElement('p');
+        dateHeader.style.cssText = 'font-size:12px;font-weight:500;color:var(--ink-mid);padding:12px 0 6px;border-top:1px solid var(--line);margin-top:4px';
+        dateHeader.textContent = b.date ? b.date.replace(/-/g,'.') : '';
+        listEl.appendChild(dateHeader);
+        lastDate = b.date;
+      }
+      listEl.appendChild(buildBookingCard(b));
+    });
+  }).catch(function(e) {
+    loading.style.display = 'none';
+    // 로컬DB fallback
+    var bookings = __localDB.filter(function(b){ return b.status !== 'cancelled'; });
+    bookings.sort(function(a,b){ return (a.date+a.time) > (b.date+b.time) ? 1 : -1; });
+    if (bookings.length === 0) {
+      listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>예약이 없어요.</p></div>';
+      return;
+    }
+    var lastDate = '';
+    bookings.forEach(function(b) {
+      if (b.date !== lastDate) {
+        var dateHeader = document.createElement('p');
+        dateHeader.style.cssText = 'font-size:12px;font-weight:500;color:var(--ink-mid);padding:12px 0 6px;border-top:1px solid var(--line);margin-top:4px';
+        dateHeader.textContent = b.date ? b.date.replace(/-/g,'.') : '';
+        listEl.appendChild(dateHeader);
+        lastDate = b.date;
+      }
+      listEl.appendChild(buildBookingCard(b));
+    });
+  });
+}
+
+
+// ---- 내 예약 조회 ----
+function searchMyBooking() {
+  var name  = document.getElementById('my-booking-name').value.trim();
+  var phone = document.getElementById('my-booking-phone').value.trim().replace(/[^0-9]/g,'');
+  var resultEl = document.getElementById('my-booking-result');
+  if (!name) { showToast('이름을 입력해 주세요.'); return; }
+  if (!phone || phone.length < 9) { showToast('전화번호를 입력해 주세요.'); return; }
+
+  resultEl.innerHTML = '<p style="text-align:center;color:var(--ink-faint);padding:2rem 0">조회 중...</p>';
+
+  // 전화번호 형식 두 가지로 조회
+  var fmtPhone = phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+  var queries = [
+    db.collection('bookings').where('phone', '==', phone).get(),
+    db.collection('bookings').where('phone', '==', fmtPhone).get()
+  ];
+
+  Promise.all(queries).then(function(results) {
+    var seen = {}, bookings = [];
+    results.forEach(function(snap) {
+      snap.forEach(function(doc) {
+        if (!seen[doc.id]) { seen[doc.id] = true; bookings.push(doc.data()); }
+      });
+    });
+
+    // 이름 검증 - 입력한 이름과 일치하는 것만
+    var matched = bookings.filter(function(b) {
+      return (b.name || '').trim() === name;
+    });
+
+    if (matched.length === 0) {
+      resultEl.innerHTML = '<div class="my-booking-empty"><div class="empty-icon">📭</div><p>이름 또는 전화번호가 일치하는<br>예약 내역이 없어요.</p></div>';
+      return;
+    }
+    matched.sort(function(a,b){ return a.date > b.date ? 1 : -1; });
+    resultEl.innerHTML = '';
+    matched.forEach(function(b) { resultEl.appendChild(buildMyBookingCard(b)); });
+  }).catch(function(e) {
+    console.warn('조회 실패:', e);
+    resultEl.innerHTML = '<div class="my-booking-empty"><div class="empty-icon">⚠️</div><p>조회 중 오류가 발생했어요.</p></div>';
+  });
+}
+
+function getDaysUntil(dateStr) {
+  if (!dateStr) return 999;
+  var today = new Date(); today.setHours(0,0,0,0);
+  var target = new Date(dateStr); target.setHours(0,0,0,0);
+  return Math.ceil((target - today) / (1000*60*60*24));
+}
+
+function buildMyBookingCard(b) {
+  var card = document.createElement('div');
+  var statusLabel = { pending:'대기중', confirmed:'확정', cancelled:'취소됨' }[b.status] || b.status;
+  var isCancelled = b.status === 'cancelled';
+  var isConfirmed = b.status === 'confirmed';
+  card.className = 'my-booking-card' + (isConfirmed?' confirmed':'') + (isCancelled?' cancelled':'');
+  card.id = 'my-card-' + b.id;
+
+  var dateStr = (b.date||'').replace(/-/g, '.');
+  var timeStr = b.time || b.catTime || '';
+  var conceptStr = b.concept || b.catConcept || '';
+  var studio = b.studio || '';
+  var price = b.totalPrice ? b.totalPrice.toLocaleString() + '원' : '-';
+
+  var actionsHtml = '';
+  if (!isCancelled) {
+    var daysLeft = getDaysUntil(b.date || b.catDate);
+    var canChange = daysLeft >= 3;
+    var noRefund = daysLeft < 3;
+    var changeBtn = canChange
+      ? '<button class="my-booking-btn change-req" onclick="requestChange('+JSON.stringify(b).replace(/"/g,"'")+')" >📅 날짜 변경 요청</button>'
+      : '<button class="my-booking-btn" style="opacity:.4;cursor:default;border-color:var(--line);color:var(--ink-faint)" onclick="showToast(&quot;날짜 변경은 촬영 3일 전까지 가능합니다.&quot;)">📅 날짜 변경 불가</button>';
+    var cancelBtn = '<button class="my-booking-btn cancel-req" onclick="requestCancel('+JSON.stringify(b).replace(/"/g,"'")+')" >✕ 예약 취소</button>';
+    actionsHtml = '<div class="my-booking-actions">' + changeBtn + cancelBtn + '</div>';
+    if (noRefund) {
+      actionsHtml += '<p style="font-size:11px;color:#B91C1C;margin:6px 0 0;text-align:center">⚠️ 촬영 2일 전부터 예약금 환불이 불가합니다.</p>';
+    }
+  }
+
+  card.innerHTML =
+    '<div class="my-booking-card-header">' +
+      '<span class="my-booking-studio">' + studio + '</span>' +
+      '<span class="my-booking-status ' + b.status + '">' + statusLabel + '</span>' +
+    '</div>' +
+    '<div class="my-booking-concept">' + conceptStr + '</div>' +
+    '<div class="my-booking-info">' +
+      '📅 ' + dateStr + ' ' + timeStr + '<br>' +
+      (b.cut ? '📷 ' + b.cut + '<br>' : '') +
+      '💰 ' + price +
+      (b.email ? '<br>✉️ ' + b.email : '') +
+    '</div>' +
+    actionsHtml;
+
+  return card;
+}
+
+function requestCancel(b) {
+  var daysLeft = getDaysUntil(b.date || b.catDate);
+  var noRefundMsg = daysLeft < 3 ? '\n\n⚠️ 촬영 2일 전이므로 예약금 환불이 불가합니다.' : '';
+  if (!confirm('예약을 취소하시겠어요?' + noRefundMsg + '\n\n' + (b.concept||b.catConcept) + ' · ' + (b.date||'').replace(/-/g,'.') + ' ' + (b.time||b.catTime||''))) return;
+
+  var overlay = document.getElementById('loading-overlay');
+  overlay.classList.add('active');
+
+  // Firebase 상태 업데이트
+  window.__updateBookingStatus(b.id, 'cancelled').then(function() {
+    // 메일 발송
+    var params = {
+      customer_name: b.name || '',
+      to_name: b.name || '',
+      studio: b.studio || '',
+      concept: b.concept || b.catConcept || '',
+      cut: b.cut || '',
+      date: (b.date||b.catDate||'').replace(/-/g,'.'),
+      time: b.time || b.catTime || '',
+      phone: b.phone || '',
+      email: b.email || '',
+      to_email: b.email || ''
+    };
+    var jobs = [];
+    // 손님 메일 (취소 템플릿)
+    if (b.email) {
+      jobs.push(emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_CANCEL, Object.assign({}, params)));
+    }
+    // 관리자 메일 (취소 템플릿) - 관리자용 추가 정보 포함
+    jobs.push(emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_CANCEL, Object.assign({}, params, {
+      to_email: ADMIN_EMAIL,
+      to_name: '유민 (관리자)'
+    })));
+
+    Promise.all(jobs).catch(function(e){ console.warn('취소 메일 발송 실패:', e); });
+
+    overlay.classList.remove('active');
+    // 카드 UI 업데이트
+    var card = document.getElementById('my-card-' + b.id);
+    if (card) {
+      card.className = 'my-booking-card cancelled';
+      card.querySelector('.my-booking-status').textContent = '취소됨';
+      card.querySelector('.my-booking-status').className = 'my-booking-status cancelled';
+      var actions = card.querySelector('.my-booking-actions');
+      if (actions) actions.remove();
+    }
+    showToast('예약이 취소되었어요. 확인 메일을 발송했어요.');
+  }).catch(function(e) {
+    overlay.classList.remove('active');
+    showToast('취소 처리 중 오류가 발생했어요.');
+  });
+}
+
+// 변경 요청 모달 상태
+var _changeTarget = null;
+var _changeModalYear = new Date().getFullYear();
+var _changeModalMonth = new Date().getMonth() + 1;
+var _changeNewDate = null;
+var _changeNewTime = null;
+
+function requestChange(b) {
+  _changeTarget = b;
+  _changeNewDate = null;
+  _changeNewTime = null;
+  _changeModalYear = new Date().getFullYear();
+  _changeModalMonth = new Date().getMonth() + 1;
+  document.getElementById('change-modal-selected').style.display = 'none';
+  document.getElementById('change-confirm-btn').disabled = true;
+  document.getElementById('change-modal-times').innerHTML = '<p style="color:var(--ink-faint);font-size:13px;grid-column:1/-1">날짜를 먼저 선택해 주세요.</p>';
+  renderChangeModalCal();
+  var overlay = document.getElementById('change-modal-overlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeChangeModal() {
+  document.getElementById('change-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function changeModalPrevMonth() {
+  _changeModalMonth--;
+  if (_changeModalMonth < 1) { _changeModalMonth = 12; _changeModalYear--; }
+  renderChangeModalCal();
+}
+function changeModalNextMonth() {
+  _changeModalMonth++;
+  if (_changeModalMonth > 12) { _changeModalMonth = 1; _changeModalYear++; }
+  renderChangeModalCal();
+}
+
+function renderChangeModalCal() {
+  var cal = document.getElementById('change-modal-cal');
+  var monthLabel = document.getElementById('change-modal-month');
+  monthLabel.textContent = _changeModalYear + '년 ' + MONTHS[_changeModalMonth-1];
+  cal.innerHTML = '';
+  var days = ['일','월','화','수','목','금','토'];
+  days.forEach(function(d){ var h=document.createElement('div'); h.className='cal-day-header'; h.textContent=d; cal.appendChild(h); });
+  var first = new Date(_changeModalYear, _changeModalMonth-1, 1).getDay();
+  var total = new Date(_changeModalYear, _changeModalMonth, 0).getDate();
+  var today = new Date(); today.setHours(0,0,0,0);
+  for(var i=0;i<first;i++){ var e=document.createElement('div'); e.className='cal-day empty'; cal.appendChild(e); }
+  for(var d=1;d<=total;d++){
+    var ds = _changeModalYear+'-'+pad(_changeModalMonth)+'-'+pad(d);
+    var btn = document.createElement('button');
+    btn.className = 'cal-day';
+    btn.textContent = d;
+    var dt = new Date(_changeModalYear, _changeModalMonth-1, d); dt.setHours(0,0,0,0);
+    var isPast = dt < today;
+    var monthKey = _changeModalYear+'-'+pad(_changeModalMonth);
+    var monthClosed = !openMonths[monthKey];
+    if (isPast || holidayDates[ds] || monthClosed) {
+      btn.classList.add('disabled');
+    } else {
+      if (ds === _changeNewDate) btn.classList.add('selected');
+      (function(dateStr){ btn.onclick = function(){
+        _changeNewDate = dateStr; _changeNewTime = null;
+        document.getElementById('change-confirm-btn').disabled = true;
+        document.getElementById('change-modal-selected').style.display = 'none';
+        renderChangeModalCal();
+        renderChangeModalTimes(dateStr);
+      };})(ds);
+    }
+    cal.appendChild(btn);
+  }
+}
+
+function renderChangeModalTimes(dateStr) {
+  var grid = document.getElementById('change-modal-times');
+  grid.innerHTML = '';
+  var times = TIMES;
+  window.__getBookingsByDate(dateStr).then(function(bookings) {
+    times.forEach(function(t) {
+      var btn = document.createElement('button');
+      btn.className = 'change-time-btn';
+      btn.textContent = t;
+      var booked = bookings.some(function(b){ return (b.time===t||b.timeEnd===t) && b.status!=='cancelled'; });
+      var blocked = blockedSlots[dateStr] && blockedSlots[dateStr][t];
+      if (booked || blocked) {
+        btn.disabled = true;
+      } else {
+        if (t === _changeNewTime) btn.classList.add('selected');
+        (function(time){ btn.onclick = function(){
+          _changeNewTime = time;
+          document.querySelectorAll('.change-time-btn').forEach(function(b){ b.classList.remove('selected'); });
+          btn.classList.add('selected');
+          var selEl = document.getElementById('change-modal-selected');
+          var selText = document.getElementById('change-modal-selected-text');
+          selEl.style.display = 'block';
+          selText.textContent = _changeNewDate.replace(/-/g,'.') + ' ' + time;
+          document.getElementById('change-confirm-btn').disabled = false;
+        };})(t);
+      }
+      grid.appendChild(btn);
+    });
+  });
+}
+
+function submitChangeRequest() {
+  if (!_changeNewDate || !_changeNewTime || !_changeTarget) return;
+  var b = _changeTarget;
+  closeChangeModal();
+  var overlay = document.getElementById('loading-overlay');
+  overlay.classList.add('active');
+
+  var params = {
+    customer_name: b.name || '',
+    to_name: b.name || '',
+    studio: b.studio || '',
+    concept: b.concept || b.catConcept || '',
+    cut: b.cut || '',
+    date: (b.date||b.catDate||'').replace(/-/g,'.'),
+    time: b.time || b.catTime || '',
+    phone: b.phone || '',
+    new_date: _changeNewDate.replace(/-/g,'.'),
+    new_time: _changeNewTime
+  };
+
+  var jobs = [];
+  if (b.email) {
+    jobs.push(emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_CHANGE, Object.assign({}, params, { to_email: b.email })));
+  }
+  jobs.push(emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_CHANGE, Object.assign({}, params, {
+    to_email: ADMIN_EMAIL,
+    to_name: '유민 (관리자)',
+    customer_name: b.name || ''
+  })));
+
+  Promise.all(jobs).then(function() {
+    overlay.classList.remove('active');
+    showToast('날짜 변경 요청을 전송했어요! 확인 후 연락드릴게요.');
+  }).catch(function(e) {
+    overlay.classList.remove('active');
+    showToast('요청 전송 중 오류가 발생했어요.');
+  });
+}
+
+// ---- RESET ----
+function resetBooking(){
+  document.getElementById('success-screen').classList.remove('active');
+  document.getElementById('main-wrap').style.display='block';
+  // 폼 초기화
+  S.brand=null; S.concept=null; S.cut=null; S.cutPrice=0; S.date=null; S.time=null; S.timeEnd=null;
+  S.catConcept=null; S.catConceptPrice=0; S.catDate=null; S.catTime=null;
+  document.querySelectorAll('.brand-card').forEach(function(c){c.classList.remove('selected');});
+  document.querySelectorAll('.concept-card').forEach(function(c){c.classList.remove('selected');});
+  document.querySelectorAll('.cut-btn').forEach(function(b){b.classList.remove('selected');});
+  document.getElementById('apple-form').classList.remove('visible');
+  document.getElementById('cat-form').classList.remove('visible');
+  document.getElementById('cut-section').style.display='none';
+  document.body.classList.remove('brand-cat');
+  ['f-name','f-phone','f-email','f-insta','f-memo','fc-name','fc-phone','fc-email','fc-insta','fc-memo'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  window.scrollTo(0,0);
+}
+
+
+// ---- Firebase 컨셉 데이터 ----
+function saveConceptsToFirebase() {
+  db.collection('settings').doc('concepts').set({
+    apple: CONCEPTS_DATA.apple,
+    cat: CONCEPTS_DATA.cat,
+    updatedAt: new Date().toISOString()
+  }).then(function() {
+    console.log('컨셉 데이터 Firebase 저장 완료');
+  }).catch(function(e) {
+    console.warn('컨셉 데이터 저장 실패:', e);
+  });
+}
+
+function loadConceptsFromFirebase(callback) {
+  db.collection('settings').doc('concepts').get().then(function(doc) {
+    if (doc.exists) {
+      var data = doc.data();
+      if (data.apple) CONCEPTS_DATA.apple = data.apple;
+      if (data.cat) CONCEPTS_DATA.cat = data.cat;
+      console.log('컨셉 데이터 Firebase에서 로드 완료');
+    }
+    if (callback) callback();
+  }).catch(function(e) {
+    console.warn('컨셉 데이터 로드 실패, 기본값 사용:', e);
+    if (callback) callback();
+  });
+}
+
+// ---- ADMIN ACCESS ----
+function checkAdminAccess() {
+  if (window.location.hash === '#admin') {
+    var btn = document.getElementById('admin-tab-btn');
+    if (btn) btn.style.display = 'block';
+    switchTab('admin');
+  }
+}
+window.addEventListener('hashchange', checkAdminAccess);
+
+// ---- INIT ----
+try {
+  var savedLang = localStorage.getItem('ga_lang');
+  if (savedLang && I18N[savedLang]) { setTimeout(function(){ setLang(savedLang); }, 0); }
+} catch(e) {}
+document.getElementById('booking-tab').style.display='block';
+document.getElementById('admin-tab').style.display='none';
+// Firebase에서 휴무일 + 컨셉 데이터 로드
+loadHolidaysFromFirebase(function() {
+  loadConceptsFromFirebase(function() {
+    syncConceptsToBookingForm();
+    checkAdminAccess();
+    renderCalendar('apple');
+    renderCalendar('cat');
+  });
+});
+startBlockedSlotsListener();
+</script>
+
+<!-- 날짜 변경 요청 모달 -->
+<div class="change-modal-overlay" id="change-modal-overlay">
+  <div class="change-modal">
+    <div class="change-modal-header">
+      <span class="change-modal-title">📅 날짜 변경 요청</span>
+      <button class="change-modal-close" onclick="closeChangeModal()">×</button>
+    </div>
+    <div class="change-modal-body">
+      <p class="change-step-label">변경 희망 날짜 선택</p>
+      <div class="cal-wrap" style="margin-bottom:1.25rem">
+        <div class="cal-header">
+          <button class="cal-nav" onclick="changeModalPrevMonth()">&#8249;</button>
+          <span class="cal-month" id="change-modal-month"></span>
+          <button class="cal-nav" onclick="changeModalNextMonth()">&#8250;</button>
+        </div>
+        <div class="cal-grid" id="change-modal-cal"></div>
+      </div>
+      <p class="change-step-label">변경 희망 시간 선택</p>
+      <div class="change-time-grid" id="change-modal-times">
+        <p style="color:var(--ink-faint);font-size:13px;grid-column:1/-1">날짜를 먼저 선택해 주세요.</p>
+      </div>
+      <div id="change-modal-selected" style="display:none;background:var(--apple-light);border-radius:10px;padding:12px 14px;margin-bottom:.5rem">
+        <p style="font-size:12px;color:var(--apple-dark);margin:0">선택된 일정: <strong id="change-modal-selected-text"></strong></p>
+      </div>
+      <button class="change-confirm-btn" id="change-confirm-btn" onclick="submitChangeRequest()" disabled>변경 요청 보내기</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
